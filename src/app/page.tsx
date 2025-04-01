@@ -21,9 +21,9 @@ export default function Home() {
   return (
     <div className="flex flex-col items-center h-screen">
       <div className="max-w-2xl gap-6 flex items-center flex-col mt-24 sm:text-center px-4">
-        <h1 className="text-2xl text-center ">👋 Hey, I'm Oscar</h1>
+        <h1 className="text-2xl text-center ">{`👋 Hey, I'm Oscar`}</h1>
         <div className="flex flex-col items-center gap-1">
-          <img
+          <Image
             src="/me.webp"
             alt="Oscar"
             className="w-54 h-54 rounded-2xl bg-cover bg-center object-cover shadow-md transition-transform duration-300 ease-in-out hover:scale-101"
@@ -33,9 +33,9 @@ export default function Home() {
           </span>
         </div>
         <h2 className="text-xl ">
-          I've spent the better half of a decade working at the nexus between
+          {`I've spent the better half of a decade working at the nexus between
           product, engineering and sales to build and sell brilliant software at
-          companies such as
+          companies such as`}
           <Tile
             logoSrc="/ra.jpeg"
             altText="RA"
