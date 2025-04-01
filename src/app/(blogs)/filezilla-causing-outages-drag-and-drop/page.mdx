@@ -1,12 +1,9 @@
----
-date: "2023-05-22"
-slug: "filezilla-causing-outages-drag-and-drop"
-title: "The carnage a single drag and drop can cause"
-description: "The carnage a single drag and drop can cause"
-dev: tech, filezilla
-writing: false
-banner: ""
----
+export const metadata = {
+  title: "FileZilla Causing Outages: Drag and Drop",
+  description:
+    "Understanding and preventing outages caused by FileZilla's drag and drop functionality.",
+  date: "2020-01-20",
+};
 
 As part of my work, I speak to organiations of varying sizes and technical proficiency about their development practices, observability tools, and production outages or incidents. In a recent alignment of stars or cosmic coincidence, two different organisations approached me with stories of outages caused by the same obscure issue.
 
@@ -14,7 +11,7 @@ Both incidents were the result of an engineer accidentally dragging and dropping
 
 Now, what are the implications of such an incident? How could it bring a company offline? Well, accidentally moving critical files off the server could break the entire application. In the past, before CI/CD became a popular practice, at my first job as an engineer, we used to deploy .NET applications by dragging DLL files from our local devices onto the production host! Similarly, removing certain scripts meant to run on the server regularly could cause major issues, especially in cases involving cleanup jobs or critical end-of-business day tasks. I should mention that while moving files on production hosts via FTP used to be common, it is now considered bad practice (partly due to reasons like this) and also because FTP is considered a somewhat insecure protocol (although it can be secured with additional measures).
 
-In both instances I encountered, the engineer had no intention of moving the folder; they either misclicked and dragged the wrong folder or accidentally clicked on their touchpad while moving the pointer. One of the organizations informed me that they attempted to find a way to add a confirmation dialogue to the drag and drop feature in order to prevent this from happening again. In their search, they came across an absolutely iconic feature request opened 19 years ago, asking for that exact functionality. The carnage within is fascinating and I implore you to explore. Here’s some testimonies from those who’ve been stung:
+In both instances I encountered, the engineer had no intention of moving the folder; they either misclicked and dragged the wrong folder or accidentally clicked on their touchpad while moving the pointer. One of the organizations informed me that they attempted to find a way to add a confirmation dialogue to the drag and drop feature in order to prevent this from happening again. In their search, they came across an absolutely iconic feature request opened 19 years ago, asking for that exact functionality. The carnage within is fascinating and I implore you to explore. Here's some testimonies from those who've been stung:
 
 This issue burnt me badly last night.
 
@@ -39,4 +36,4 @@ by jeroen, 10 years ago
 
 by ikary, 11 years ago
 
-> What can we learn from this? Well I’m not suggesting running for the hills and never using FileZilla again, it’s a fantastic tool that’s been maintained for decades and has provided me and many others with overwhelming utility. But, you should probably disable drag and drop on your FileZilla client, and if you’re using FTP to access your production instances, it might be time to pack it up.
+> What can we learn from this? Well I'm not suggesting running for the hills and never using FileZilla again, it's a fantastic tool that's been maintained for decades and has provided me and many others with overwhelming utility. But, you should probably disable drag and drop on your FileZilla client, and if you're using FTP to access your production instances, it might be time to pack it up.

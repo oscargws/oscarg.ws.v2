@@ -1,11 +1,9 @@
----
-date: "2019-06-06"
-title: "Using Google's Measurement Protocol in .NET"
-slug: "using-google-s-measurement-protocol-in-net"
-tags: tech, dev, .net
-writing: false
-banner: ""
----
+export const metadata = {
+  title: "Using Google's Measurement Protocol in .NET",
+  description:
+    "A guide to implementing Google's Measurement Protocol in .NET applications.",
+  date: "2020-01-20",
+};
 
 Google's Measurement Protocol (MP) is a product that allows developers to make direct HTTP requests to send user interaction data to Google Analytics. If you're reading this, you probably knew that, as for some reason or another, you're not using `analytics.js`, the JavaScript library for interacting with Google Analytics, that _most_ developers use instead of **MP**.
 
@@ -61,7 +59,7 @@ ga("ecommerce:addTransaction", {
   revenue: "25.99",
   shipping: "12",
   tax: "1.50",
-})
+});
 ```
 
 In this snippet, you've got the `id` of the product, the `affiliation`, the `revenue` from the sale (**this should include the shipping and tax costs**), the `shipping` cost and last of all the `tax`. Doing this via MP is as simple as looking up the corresponding values in their [Parameter Reference](https://developers.google.com/analytics/devguides/collection/protocol/v1/parameters) and adding the values needed.
