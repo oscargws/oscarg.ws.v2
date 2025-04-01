@@ -1,0 +1,41 @@
+---
+date: "2021-01-12"
+title: "Fixing flashes of white in react-navigation"
+slug: "fixing-flashes-of-white-in-react-navigation"
+tags: tech, dev, ios
+writing: false
+banner: ""
+---
+
+I was having a consistently annoying issue whilst trying to build a react-native app for iOS. Whenever I would navigate between pages (stacks), there would be an extremely quick flash of white content before the page was rendered. I had set the background color of practically every element to black, yet it would still flash up as white.
+
+This happens due to the background of the `<Stack.Screen> `component being the backgroundColour of `<NavigationContainer />` theme prop. So in my case, to fix this, all I needed to do was create a theme object and apply it to the `<NavigationContianer />`.
+
+```js
+
+import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
+
+...
+
+
+const theme = {
+  ...DefaultTheme,
+  colors: {
+    ...DefaultTheme.colors,
+    background: 'black',
+  },
+}
+
+...
+
+<NavigationContainer ={theme}>
+	<Stack.Navigator>
+	  <Stack.Screen name="About" component={AboutScreen}/>
+	  <Stack.Screen name="Listen" component={LiveScreen}/>
+	  <Stack.Screen name="Schedule" component={ScheduleScreen}/>
+	</Stack.Navigator>
+</NavigationContainer>
+
+```
+
+Hopefully this can help someone else who was banging their head against the wall like i was.

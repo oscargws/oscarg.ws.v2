@@ -1,0 +1,29 @@
+---
+date: "2019-10-30"
+title: "Compressing all pngs in a directory with pngquant"
+slug: "compressing-all-pngs-in-a-directory-with-pngquant"
+tags: tech, dev
+writing: false
+banner: ""
+---
+
+On a project I'm working on currently we've been using a lot of uncompressed png's, which is killing the pageload of nearly every section.
+
+I didn't want to have to manually compress every file and as a result came up with a little solution using [pngquant](https://pngquant.org/).
+
+First find all the files in the directory you want to compress, so lets use `find` for this.
+
+`find src | grep '.png'`
+
+The output should look something like this.
+
+```
+src/components/assets/testing/icon.png
+src/components/assets/testing/app.png
+```
+
+Now just pipe the output into `xargs` and run `pngquant` on it for each line.
+
+`find src | grep '.png' | xargs -L1 pngquant`
+
+Boom, all the files will now be compressed

@@ -1,0 +1,154 @@
+---
+date: "2024-05-27"
+slug: "transitioning-from-software-to-sales-engineering"
+title: "Transitioning from Software Engineering to Sales Engineering"
+description: "A rundown of how I made the jump from a hands-on-keys engineer to a customer facing sales engineer"
+writing: true
+banner: "/img/swe-to-se.jpg"
+---
+
+import React from "react"
+import { VStack } from "@chakra-ui/react"
+
+## Motivations
+
+In 2022 I hung up my keyboard and mouse and left my career as a Senior Software Engineer to explore a new avenue as a Sales Engineer at Datadog. At the time, this felt like one of the riskiest career moves I could’ve made. Leaving the relatively safe and stable career progression of hands-on-keys engineering for the completely new (to me) world of sales. Over two years on from making that decision, I can confidently say it was the best career move I’ve made so far. I thought I’d share how and why I did it for anyone else out their considering the same thing. 
+
+I’ll give a quick Sales Engineering 101 for anyone who’s stumbled upon this post and isn’t familiar with the role. Essentially a Sales Engineer is a hybrid sales / engineering role, where you’re supporting traditional sales people - Account Executives - in selling a technical product. Your job is to lean on your engineering background and problem solving skills to understand how your product could help a prospective customer. There’s no sprints, no backlogs, no design meetings. Instead, there’s a constant feed of deals coming in through your team of AE’s and it's your responsibility to get the ‘technical win’, which is just the phrase we use to say the prospective customer is confident the product is a technical fit and will solve their business pain.
+
+## Making the move
+
+Now onto how I actually did it. First step was to adjust my resume to speak more to sales folk than engineers. Here's the [resume](/files/2022-resume.pdf) I used that landed me my first SE role. I left enough technical achievements and experience to satisfy the 'Engineer' part of the title, and then added in more details around the presentation and customer facing work I'd already completed - the 'Sales' half of the title. Once I had what felt like an appropriate resume, I applied to as many open roles as I possibly could, to which there were very few as the Australian market for Sales Engineers is quite small. I only received follow up interviews with 2 out of the 20 or so companies I had applied to. One of these, was Datadog.
+
+## Nailing the interview
+
+The interview process was relatively standard for a software company. HR screening, informal chats with multiple members of the team and a relatively simple technical take home assignment. The final and most important round however, was a panel style interview, where I would be presenting a demo for any product I liked, and would be selling it to the attendees in a mock customer call scenario. This stage was very open ended, and I'd never had to do something like this, the ambiguity made me quite nervous, so I decided to create some structure for both myself and the attendees.
+
+I created an agenda for the interview, with a mock scenario I had designed, detailing what product I would be demoing, but also made up personas for the attendees to adopt. These personas were tailored to each attendee, and included what their job title was, their day to day responsibilities and their business pain. I demoed a product I had used extensively for a side project outside of work, an internet radio platform I had used to manage Nomad Radio. So in practice, what does this actually look like? Well, below is the PDF I sent. I've redacted the names of those in attendance.
+
+<br/>
+
+<VStack paddingY={4} paddingX={6} borderRadius={8} backgroundColor="gray.100" spacing={3} textAlign="left" alignItems="start">
+
+## What am I demoing?
+
+[Redacted] suggested I potentially present Nomad Radio, the NFP internet radio station that I run outside of work. This got me thinking about the tools we use to run Nomad Radio, and I thought this would be a great opportunity to present a tool that is at the core of Nomad Radio, and is also maybe a bit different to what you’re used to seeing in these sessions.
+
+I’ll be demoing **[Airtime Pro](https://www.airtime.pro/)** to your team this Thursday. Airtime is an online radio platform for creating internet radio stations, or extending traditional FM/AM stations to the web. The platform looks after scheduling, broadcasting, archiving and analytics all-in-one.
+
+In our mock engagement, you’ve met [Redacted], the Account Executive I work with, who’s conducted a discovery session with your team already.
+
+---
+
+## Who do you work for?
+
+You are all employees of **Dancing Dog Radio (DDR)**. An established and well-respected FM radio station in Sydney, with a focus on dance music. You have a growing (roughly 50,000 active listeners) and dedicated cult-like following in Sydney and have started to receive more and more interest and attention from overseas, with people asking for a way to listen outside of Sydney. Due to this increased interest, you’ve decided to extend your broadcasting from just local FM, to the internet, in order to reach a larger audience.
+
+Some of the content DDR broadcasts is recorded live in the studio, whilst some is pre-recorded and then broadcast at a later date (this varies on a show by show basis). There are roughly 60 different shows running on the station, all with different hosts from the greater Sydney area.
+
+---
+
+## Who am I?
+
+### [Commercial Sales Manager] - **Managing Director**
+
+**Responsibilities**
+
+- In charge of the overall running of the station
+- Setting long term objectives for the continued growth of the station
+- Coordinating partnerships with Sarah to bring revenue into the station
+
+**Concerns and desires**
+
+- Wants a better understand of user demographic, FM radio doesn’t allow for detailed analytics
+- Budget concerned, needs to be able to afford this long term
+- Comes from FM radio, not internet, needs a product that can ease that transition and not be too complicated
+- Would like to expand the stations shows to be able to have hosts that aren’t just in the Sydney area
+
+---
+
+### [Director of Sale Engineering] - **Technical Director**
+
+**Responsibilities**
+
+- Technical architecture of the radio station
+- Managing engineers and technical staff
+- Streaming the audio live to the FM listeners, including managing the physical hardware in the studio
+
+**Concerns and desires**
+
+- Wants to build an iOS app for listeners to stream the station
+- Wants to extend the existing website to be able to stream the station live via the web
+- Shows and audio files are becoming hard to manage on dropbox and the FTP server
+- Hasn’t built anything for radio streaming on the web before
+
+---
+
+### [Head of Channel & Alliances] - Operations **& Communications Director**
+
+**Responsibilities**
+
+- Promoting and growing the station
+- Engaging with the audience and growing partnerships
+- Managing social media accounts (twitter, soundcloud, facebook)
+- Complying with legal requirements and paying correct royalty payments for played songs to APRA (APRA AMCOS consists of Australasian Performing Right Association and Australasian Mechanical Copyright Owners Society)
+
+**Concerns and desires**
+
+- Wants more granularity on user demographic and listeners
+- Needs a better way to track all the royalties that need to be paid
+- Wants a remote plan for if COVID or another WFH situation arises
+
+---
+
+### [Sales Engineering Manager] - **Program Coordinator**
+
+**Responsibilities**
+
+- Coordinating all the different shows and hosts that are a part of the station
+- Defining the weekly schedule of shows and filling in any cancellations or last minute vacancies
+- Onboarding new shows and hosts to the station, teaching them how to broadcast and ensuring the broadcast goes smoothly
+- All changes to the schedule and show details must go through Greg
+
+**Concerns and desires**
+
+- Uploading and scheduling pre-recorded shows has become extremely time consuming, as the station grows, the work around this grows too
+- Working with Sean to create a way for hosts from outside of Sydney to have shows on the station
+- Wants a remote plan for if COVID or another WFH situation arises
+- Would prefer a way for show hosts to be able to manage their own content
+
+---
+
+### [Sales Engineer] - **Software Engineer**
+
+**Responsibilities**
+
+- Maintaining the existing bare-bones website that has information about shows and the radio station
+- Responsible for managing the FTP server and Dropbox accounts where most of the audio assets live across
+
+**Concerns and desires**
+
+- Hasn’t built a web streaming product before, not sure what’s involved
+- Hoping to extend the existing website to be able to stream the radio station via the web, but has never done this before
+- Will be building an iOS app with Carlo in the future for streaming the radio station
+- Worried about documentation quality as he’s not a subject matter expert in streaming
+
+---
+
+If you have any questions about what I’ve sent above, feel free to shoot me an email (redacted), or we can chat about it at the start of our meeting!
+
+See you all soon. Cheers!
+
+</VStack>
+
+<br/>
+
+## Why this worked
+
+The panel interview was successful, and very soon after I was offered a position and started my new career as a Sales Engineer. Upon starting my role, I re-met a lot of those who were in attendance of the demo and received a lot of great feedback about how it went down. What seemed to really push me over the line in comparison to other candidates for the role was the agenda I sent over and what this demonstrated about my character.
+
+By creating an agenda, it allowed me to spend more time on the call demonstrating the value of the product in a close to real world situation, rather than just the features of the product in a vacuum. Instead of showing feature X and explaining what it does, I could explain how feature X could solve for one of their specific pain points. By providing the attendees with a role to play with responsibilities and pain, they had some pre-canned questions they could shoot off during the demo, or objections they could throw out. If I hadn't sent the agenda over, there's a chance they wouldn't be familiar with the product I was demoing, or the industry it operated in, therefore they'd have no realistic questions to ask or pain to experience. That'd just result in me doing a rather one-sided product demo to a disengaged audience.
+
+## Happily ever after
+
+For anyone who's thinking of making the same move, go for it, it's an extremely rewarding career path that's highly engaging and deeply satisfying. If you're trying to make the move, remember that role is more of a sales role than it is a technical one, and adjust your resume and interview style to match! I hoped this provided some value to those who are looking to make a similar career move, or opened some potential software engineers to the world of sales engineering.

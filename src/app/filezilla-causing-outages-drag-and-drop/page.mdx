@@ -1,0 +1,42 @@
+---
+date: "2023-05-22"
+slug: "filezilla-causing-outages-drag-and-drop"
+title: "The carnage a single drag and drop can cause"
+description: "The carnage a single drag and drop can cause"
+dev: tech, filezilla
+writing: false
+banner: ""
+---
+
+As part of my work, I speak to organiations of varying sizes and technical proficiency about their development practices, observability tools, and production outages or incidents. In a recent alignment of stars or cosmic coincidence, two different organisations approached me with stories of outages caused by the same obscure issue.
+
+Both incidents were the result of an engineer accidentally dragging and dropping a folder on their remote server in FileZilla. FileZilla is a fantastic open-source FTP client primarily used to move files and folders between remote devices using FTP (File Transfer Protocol). However, the drag and drop action in FileZilla does not have a confirmation dialogue and, by default, performs a cut action instead of a copy and paste. This means that if you drag something from your server to your local host, it will be deleted from the host (without an undo option). Additionally, it is not immediately obvious that the action has been performed, so if you unintentionally clicked and then switched to another screen, you wouldn't be aware of the change. Consequently, a user could unknowingly delete a folder from their production host.
+
+Now, what are the implications of such an incident? How could it bring a company offline? Well, accidentally moving critical files off the server could break the entire application. In the past, before CI/CD became a popular practice, at my first job as an engineer, we used to deploy .NET applications by dragging DLL files from our local devices onto the production host! Similarly, removing certain scripts meant to run on the server regularly could cause major issues, especially in cases involving cleanup jobs or critical end-of-business day tasks. I should mention that while moving files on production hosts via FTP used to be common, it is now considered bad practice (partly due to reasons like this) and also because FTP is considered a somewhat insecure protocol (although it can be secured with additional measures).
+
+In both instances I encountered, the engineer had no intention of moving the folder; they either misclicked and dragged the wrong folder or accidentally clicked on their touchpad while moving the pointer. One of the organizations informed me that they attempted to find a way to add a confirmation dialogue to the drag and drop feature in order to prevent this from happening again. In their search, they came across an absolutely iconic feature request opened 19 years ago, asking for that exact functionality. The carnage within is fascinating and I implore you to explore. Here’s some testimonies from those who’ve been stung:
+
+This issue burnt me badly last night.
+
+Apparently I inadvertently moved a folder on a customer's server. I suspect Filezilla (on Ubuntu 18.04) interpreted my touchpad action to open a folder as a move. We only became aware of what happened after all hell broke loose with jobs failing overnight.
+
+What makes the issue particularly bad is that there is no obvious feedback from Filezilla to indicate that the folder has been moved. The folder tree on the remote server is not automatically updated when the move has taken place. The folder tree needs to be refreshed for the folder move to become apparent.
+
+by Mark van Leeuwen, 5 years ago
+
+> Just messed up a production Magento server!!!!!!!!!!
+>
+> This is a bigger issue than you believe it to be. I would put a bet on that a big percentage of Filezilla users have, at some point, mistakenly moved folders without realising. I would even bet that someone at Filezilla (may be you) have accidentally moved folders too - come on admit to it.
+
+hejhog, 7 years ago
+
+> I would really like this feature, I also have been using Filezilla since years but just brought down a website accidently. It just happens when there's no need for this to happen.
+
+by jeroen, 10 years ago
+
+> confirmed, at this date, two production server crashed because of this
+> thx
+
+by ikary, 11 years ago
+
+> What can we learn from this? Well I’m not suggesting running for the hills and never using FileZilla again, it’s a fantastic tool that’s been maintained for decades and has provided me and many others with overwhelming utility. But, you should probably disable drag and drop on your FileZilla client, and if you’re using FTP to access your production instances, it might be time to pack it up.

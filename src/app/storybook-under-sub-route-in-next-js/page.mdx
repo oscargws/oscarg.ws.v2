@@ -1,0 +1,49 @@
+---
+date: "2022-03-21"
+slug: "storybook-under-sub-route-in-next-js"
+title: "Hosting storybook under a sub route in Next.js"
+tags: tech, dev, react
+writing: false
+banner: ""
+---
+
+For a Design System I'm currently working on, we've decided to have the docs hosted under one domain, which include the traditional style of documentation, as well as playroom and storybook. We want users to be able to jump between the documentation and live examples in playroom or storybook but stay within the same app / domain. We're using Next.js for the docs in this case.
+
+Here's how to host Storybook under a sub-route in Next.js, for this example, we'll be hosting it under the `/storybook` route.
+
+### Add manager-head.html
+
+Add the following file under `.storybook/`
+
+```
+<link rel="shortcut icon" type="image/x-icon" href="/storybook/favicon.ico">
+<script>
+    window['PREVIEW_URL'] = '/storybook/iframe.html';
+</script>
+```
+
+### Change webpack config
+
+Modify the `.storybook/main.js` as follows
+
+```
+module.exports = {
+	...
+	webpackFinal: async (config, { configType }) => {
+		config.output.publicPat = '/storybook/';
+		return config;
+	},
+	managerWebpack: async (config) => {
+		config.output.publicPath = '/storybook/';
+		return config;
+	},
+}
+```
+
+### Build storybook into `/public/`
+
+We'll serve storybook as a static app by building into the [Next.js public folder](https://nextjs.org/docs/basic-features/static-file-serving) . Just run the following during your build process.
+
+```
+yarn build-storybook -o ./public/storybook
+```

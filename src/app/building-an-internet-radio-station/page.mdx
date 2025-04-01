@@ -1,0 +1,68 @@
+---
+date: "2019-09-20"
+slug: "building-an-internet-radio-station"
+title: "The tech behind building an independent, internet radio station"
+dev: tech, not-for-profit
+writing: true
+banner: ""
+---
+
+Earlier this year I founded and built an internet radio station in Sydney called [Nomad Radio](https://nomadradio.fm/). When I set out to create the station, I knew nothing about streaming. As a result of this I spent a lot of time fumbling around, trying to figure out the best way to approach it, taking bits and pieces from other stations like [NTS](https://www.nts.live/), [Noods](https://noodsradio.com/), [Quantica](https://www.radioquantica.com/) and [Skylab](http://skylab-radio.com/).
+
+A few people have asked me what the technical infrastructure looks like for Nomad Radio, so this post will outline that whilst also acting as a basic handbook or guide for anyone else looking to build a DIY internet radio station.
+
+### Our set-up
+
+Before I go any further it makes sense to explain what our set-up and use case is. We have a physical studio with 2 x Technics, 2 x CDJ 2000's and a DJM 700. 99% of our shows are DJ's coming to the studio and mixing one after another - in a similar manner to how it would work in a venue / club.
+
+Occasionally, we have pre-recorded shows that are played from people that can't physically get to the studio (e.g out of state residents). We don't always have shows running as well, some days there can be 2 hours of shows, others up to 8 hours. Overall, the most important factors for us were ease of use when streaming from the studio, and a simple way to upload entire pre-recorded shows to stream.
+
+### Streaming
+
+This is obviously the biggest aspect to it all, how do you get your audio from the studio to the world? During an initial search, most people will probably find [Radio.co](https://radio.co) or [Airtime Pro](https://www.airtime.pro/), both offering hosted streaming solutions. However, both are fairly restrictive when it comes to their pricing models.
+
+Airtime Pro is a SAAS streaming solution by SourceFabric, the product they offer is actually their open source project
+[Airtime](https://github.com/sourcefabric/airtime). The starter plan on Airtime is 33\$ USD a month, and only allows streaming at 128kbps and a maximum of 400 concurrent listeners.
+
+Radio.co offers a slightly better plan at 49\$ a month: 192kbps streaming and a maximum of 10,000 listeners. This may be a good solution for some people, however it didn't fit my use case. Radio.co seems to be aimed more at people that will be creating playlists of songs to air at certain times, rather than entire pre-recorded shows or live DJ's (It does have that functionality, it just doesn't seem to be tailored to it).
+
+#### LibreTime
+
+Libretime is an open source broadcasting software that was forked from Airtime's open source project (That they have abandoned in order to spend more resources on their SAAS Airtime Pro offering). It's an all in one package that includes tools for scheduling and remotely managing an internet radio station.
+
+Libretime manages Liquidsoap (Stream generator), PostgreSQL (DB For all schdeuling, files, info etc) and Icecast (I'll talk about this later). It has a fairly active community of contributors and reasonably good documentation. It also just works. This was the streaming solution I chose, as it came with a few key features.
+
+- Self-hosted, meaning I had full control (and responsibility) over the streams
+- No limits on audio quality, listener count
+- Better suited for streaming live shows alongside pre-recorded shows that are uploaded
+- Open source!
+
+<img src="/libretime.svg" alt="Libretime architecture" style="padding: 20px;"/>
+
+_In our case, our 'transmitter' is really just more relay Icecast servers_.
+
+#### Icecast
+
+Icecast is bundled into LibreTime and actually handles the streaming of audio, it's what users directly connect to when listening. It also has a neat feature built into it called [relaying](http://www.icecast.org/docs/icecast-2.4.0/relaying.html). Which allows a Master server to act as the central point for Relay servers to replicate their stream from. This takes a noticable amount of the load off the Master server, as listeners can be pointed to Relay servers instead.
+
+### Hosting
+
+As Libretime is self-hosted, I needed somewhere to host it. My go to for this was an EC2 instance on AWS. However, EC2 instances don't have a very high amount of transfer. A single user listening to a 128kbps stream, non-stop for a month, would use about 300GB of transfer. Just one user!
+
+[Digital Ocean](https://www.digitalocean.com/pricing/) came to the rescue, with their smallest 5\$ a month droplet having 1TB of transfer. Also, I find Digital Ocean a breeze to use, the interface is clean, it's simple, they don't offer a lot but they've really nailed what they do offer.
+
+### Content Management (CMS)
+
+This may not apply to everyone, but for Nomad Radio we needed to have Artist, Show and Episode pages on the site. For this we used [Contentful](https://www.contentful.com/) as a headless API (Shout out to Gus and Simon from [Skylab](https://skylab-radio.com) for the recommendation). At our usage (less than 5000 different entities), Contentful is actually free, as well as being very simple to use, especially for those without technical knowledge!
+
+### Final notes
+
+Building the station was a technical challenge that I thoroughly enjoyed. The key to it all was discovering and utilising Libretime. If anyone has any questions or needs help building their own station, I'd love to hear from you. You can find my details on the contact page.
+
+### Reading material
+
+https://medium.com/nts-radio-tech-blog/icecast-in-production-7313cb5c95ff  
+https://www.goncalopereira.com/blog/radio-quantica/  
+https://libretime.org/documentation/
+
+[Hacker News Thread](https://news.ycombinator.com/item?id=21040241)

@@ -1,0 +1,60 @@
+---
+date: "2020-01-20"
+title: "Adding storybook to a Typescript + Next.js project"
+slug: "adding-storybook-to-a-typescript-next-js-project"
+writing: false
+tags: "tech, dev, react"
+banner: ""
+---
+
+The recommended way of adding storybook to a project using TypeScript on the official storybook documentation doesn't actually work. It required a bit of tweaking but here is how to get it to work alongside a Next.js project.
+
+My folder structure is as follows:
+
+```
+├── .storybook
+├── public
+│   ├── favicon.ico
+│   ├── ...
+└── src
+    ├── components
+    │   ├── Accordion
+    │   ├── Alert
+    │   ├── Box
+    │   ├── ...
+    ├── pages
+    └── util
+```
+
+With each `storybook.tsx` file belonging inside it's respective component folder.
+
+First fetch the necessary libraries.
+
+`yarn add @storybook/react babel-loader babel-preset-react-app`
+
+Then to get storybook working add the two following files.
+
+#### ./storybook/config.js
+
+```
+import { configure } from '@storybook/react'
+
+configure(require.context('../src/components', true, /\.stories\.tsx?$/), module)
+```
+
+#### ./storybook/webpack.config.js
+
+```
+module.exports = ({ config }) => {
+    config.module.rules.push({
+        test: /\.(ts|tsx)$/,
+        loader: require.resolve('babel-loader'),
+        options: {
+            presets: [require.resolve('babel-preset-react-app')],
+        },
+    });
+
+    config.resolve.extensions.push('.ts', '.tsx');
+    return config;
+};
+```

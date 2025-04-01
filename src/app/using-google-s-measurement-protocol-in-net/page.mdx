@@ -1,0 +1,172 @@
+---
+date: "2019-06-06"
+title: "Using Google's Measurement Protocol in .NET"
+slug: "using-google-s-measurement-protocol-in-net"
+tags: tech, dev, .net
+writing: false
+banner: ""
+---
+
+Google's Measurement Protocol (MP) is a product that allows developers to make direct HTTP requests to send user interaction data to Google Analytics. If you're reading this, you probably knew that, as for some reason or another, you're not using `analytics.js`, the JavaScript library for interacting with Google Analytics, that _most_ developers use instead of **MP**.
+
+### Benefits
+
+- Send data directly from the server / back-end
+- Circumvent ad-blockers that block any Google Analytics related servers and or tracking tags
+- Track data from users that have JavaScript disabled
+- Simple REST endpoint, nothing crazy to wrap your head around
+
+However, as this is all done server side, tracking events such as button clicks or user interaction on the front-end is not possible. The reason I used it was to better track eCommerce related events through Google Analytics (Transactions, Items ect).
+
+### Interacting with MP
+
+It's pretty simple, just send a POST to their endpoint. With `data_here` being the parameters you want to send.
+
+```http
+POST /collect HTTP/1.1
+Host: www.google-analytics.com
+
+data_here
+```
+
+**NOTE: These are the required variables you must send on every hit. **
+
+| Name             | Parameter | Example           | Description                                                                |
+| ---------------- | --------- | ----------------- | -------------------------------------------------------------------------- |
+| Protocol Version | `v`       | `v=1`             | The protocol version. The value should be `1`.                             |
+| Tracking ID      | `tid`     | `tid=UA-XXXXXX-Y` | The ID that distinguishes to which Google Analytics property to send data. |
+| Hit Type         | `t`       | `t=pageview`      | The type of interaction collected for a particular user. E.g pageview      |
+
+So, a simple pageview hit would look like this:
+
+```http
+POST /collect HTTP/1.1
+Host: www.google-analytics.com
+
+v=1&tid=UA-XXXXX-Y&t=pageview
+```
+
+In order to send different types of hits, just change the Hit Type value, for the next example, I'll be using a transaction hit.
+
+### Migrating from analytics.js to MP
+
+This section is for any developers that already have a front-end implementation of `analytics.js` and want to see what the equivalent data would like being sent to MP.
+
+Let's say you've got an add transaction event that looks something like this.
+
+```javascript
+ga("ecommerce:addTransaction", {
+  id: "1234",
+  affiliation: "Big Brians Bargain Biscuits",
+  revenue: "25.99",
+  shipping: "12",
+  tax: "1.50",
+})
+```
+
+In this snippet, you've got the `id` of the product, the `affiliation`, the `revenue` from the sale (**this should include the shipping and tax costs**), the `shipping` cost and last of all the `tax`. Doing this via MP is as simple as looking up the corresponding values in their [Parameter Reference](https://developers.google.com/analytics/devguides/collection/protocol/v1/parameters) and adding the values needed.
+
+We're first going to need the required values in the table above. As well as the parameters for an `addTransaction` event. (Which we can find in the Parameter Reference)
+
+| Name                        | Parameter | Example                          |
+| --------------------------- | --------- | -------------------------------- |
+| Protocol Version (Required) | `v`       | `v=1`                            |
+| Tracking ID (Required)      | `tid`     | `tid=UA-XXXXXX-Y`                |
+| Hit Type (Required)         | `t`       | `t=transaction`                  |
+| Transaction ID              | `ti`      | `ti=1234`                        |
+| Transaction Affiliation     | `ta`      | `ta=Big Brians Bargain Biscuits` |
+| Transaction Revenue         | `tr`      | `tr=25.99`                       |
+| Transaction Shipping        | `ts`      | `ts=12`                          |
+| Transaction Tax             | `tt`      | `tx=1.50`                        |
+| Currency Code               | `cu`      | `cu=USD`                         |
+
+The above table turns into a POST that looks like this.
+
+```http
+POST /collect HTTP/1.1
+Host: www.google-analytics.com
+
+v=1&t=transaction&tid=UA-XXXXX-Y&cid=555&ti=1234&ta=Big%20Brians%20Bargain%20Biscuits&tr=25.99&ts=12&tt=1.50&cu=USD
+```
+
+Simple, yeah?
+
+### Sending hits in .NET
+
+Alright, so now for what most of you have probably read this post for. How to do this in .NET. Well, we're going to need to create a new class, call it whatever you want, but as we're interacting with an API, we'll need an `HttpClient`. For the purposes of this explanation, I'll show you how to send a `transaction` hit with hardcoded values. First, create that `HttpClient` I mentioned earlier.
+
+```c#
+private static readonly HttpClient client = new HttpClient();
+```
+
+Now, as there's a few things that won't change in every hit, we might as well set them as constants as well.
+
+```c#
+private const string AnalyticsUrl = "http://www.google-analytics.com/collect";
+private const string ProtocolVersion = "1";
+private const string GoogleAnalyticsTrackingId = "UA-XXXXXX-Y";
+```
+
+The easiest way to get all our parameters together, is to create a Dictionary with them inside, so let's do that inside a `ecommerceTransaction` method. Note, I'm making this `async` as it'll need to send and then receive data from the endpoint.
+
+```c#
+public async Task ecommerceTransaction()
+{
+    var parameters = new Dictionary<string, string>
+    {
+        { "v", ProtocolVersion },               // The version of MP
+        { "tid", GoogleAnalyticsTrackingId },   // The tracking code 'UA-XXXXXX-Y'
+        { "t", "transaction" },                 // The hit type, e.g a 'transaction'
+        { "ti", "1234" },                       // The order number
+        { "ta", "Big Brians Bargain Biscuits" },// The affiliation
+        { "tr", "25.99" },                      // The revenue
+        { "ts", "12" },                         // The shipping
+        { "tt",  "1.50" },                      // The tax
+        { "cu", "USD" }                         // The currency
+    };
+}
+```
+
+Now we need to encode this into something we can POST to Google.
+
+```c#
+var transaction = new FormUrlEncodedContent(paramaters);
+```
+
+And then to POST it to Google, we'll use the `HttpClient` we made earlier, and post it to the `AnalyticsUrl`.
+
+```c#
+await client.PostAsync(AnalyticsUrl, request);
+```
+
+Now, with everything done, here's what the class you've created should look like.
+
+```c#
+public class MeasurementProtocol()
+{
+    private static readonly HttpClient client = new HttpClient();
+
+    private const string AnalyticsUrl = "http://www.google-analytics.com/collect";
+	private const string ProtocolVersion = "1";
+    private const string GoogleAnalyticsTrackingId = "UA-XXXXXX-Y";
+
+    public async Task ecommerceTransaction()
+    {
+        var parameters = new Dictionary<string, string>
+        {
+            { "v", ProtocolVersion },
+            { "tid", GoogleAnalyticsTrackingId },
+            { "t", "transaction" },
+            { "ti", "1234" },
+            { "ta", "Big Brians Bargain Biscuits" },
+            { "tr", "25.99" },
+            { "ts", "12" },
+            { "tt",  "1.50" },
+            { "cu", "USD" }
+        };
+
+        var transaction = new FormUrlEncodedContent(paramaters);
+        await client.PostAsync(AnalyticsUrl, request);
+    }
+}
+```

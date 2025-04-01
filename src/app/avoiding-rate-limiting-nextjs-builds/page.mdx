@@ -1,0 +1,26 @@
+---
+date: "2022-08-19"
+slug: "avoiding-rate-limiting-nextjs-builds"
+title: "Avoiding rate limits and timeouts during Next.js builds"
+tags: tech, dev, react
+writing: false
+banner: ""
+---
+
+An unexpected side effect of using Next.js to build static sites for [Nomad Radio](https://nomad.radio) was that during our build step, when Next.js would build out the pages for over 100 residents and over 1000 episodes, we'd encounter build errors due to Next.js using multiple threads to query our database for the relevant information. Eventually, all the available connections would be locked by each thread, leaving no available slots for the next thread.
+
+This was an issue that never occurred during development (as when Next.js is running in dev it only builds out pages as they're requested). It also made me aware that this issue would occur if we were requesting from any external API that had low rate-limits.
+
+### Solution
+
+By default, Next.js will build your static pages via multiple threads, depending on the server that this is being run on, there can be _a lot_ of threads, and consequently, a lot of requests.
+
+For applications that are running Next.js v10.0 or later, you can control the `workerThreads` and avoid multithreading all together. This is achieved by adding the following to your `next.config.js`.
+
+    module.exports = {
+      ...
+      experimental: {
+        workerThreads: false,
+        cpus: 1
+      },
+    };
