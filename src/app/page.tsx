@@ -21,7 +21,7 @@ export default function Home() {
   return (
     <div className="flex flex-col items-center h-screen">
       <div className="max-w-2xl gap-6 flex items-center flex-col mt-24 sm:text-center px-4">
-        <h1 className="text-2xl text-center ">👋 Hey, I'm Oscar.</h1>
+        <h1 className="text-2xl text-center ">👋 Hey, I'm Oscar</h1>
         <div className="flex flex-col items-center gap-1">
           <img
             src="/me.webp"
