@@ -26,6 +26,8 @@ export default function Home() {
           <Image
             src="/me.webp"
             alt="Oscar"
+            height={216}
+            width={216}
             className="w-54 h-54 rounded-2xl bg-cover bg-center object-cover shadow-md transition-transform duration-300 ease-in-out hover:scale-101"
           />
           <span className="text-xs text-gray-500">
@@ -82,6 +84,23 @@ export default function Home() {
         <h2 className="text-xl">
           You can also find other miscellaneous writings of mine here.
         </h2> */}
+      </div>
+      <div className="flex items-center text-gray-500 text-sm gap-2 mt-6">
+        <a
+          href="https://www.linkedin.com/in/oscargws/"
+          className="hover:text-gray-700"
+        >
+          linkedin
+        </a>{" "}
+        <a href="https://github.com/oscargws" className="hover:text-gray-700">
+          github
+        </a>
+        <a
+          href="https://www.instagram.com/oscarg.ws/"
+          className="hover:text-gray-700"
+        >
+          instagram
+        </a>
       </div>
     </div>
   );
