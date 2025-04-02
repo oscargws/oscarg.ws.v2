@@ -20,17 +20,17 @@ export const metadata = {
 export default function Home() {
   return (
     <div className="flex flex-col items-center h-screen">
-      <div className="max-w-2xl gap-6 flex items-center flex-col mt-24 sm:text-center px-4">
+      <div className="max-w-2xl gap-6 flex items-center flex-col mt-8 sm:mt-24 text-center px-4">
         <h1 className="text-2xl text-center ">{`👋 Hey, I'm Oscar`}</h1>
         <div className="flex flex-col items-center gap-1">
           <Image
-            src="/me.webp"
+            src="/me.jpg"
             alt="Oscar"
             height={216}
             width={216}
             className="w-54 h-54 rounded-2xl bg-cover bg-center object-cover shadow-md transition-transform duration-300 ease-in-out hover:scale-101"
           />
-          <span className="text-xs text-gray-500">
+          <span className="text-xs text-gray-500 pt-1">
             {`(me talking very enthusiastically about security)`}
           </span>
         </div>
@@ -85,7 +85,7 @@ export default function Home() {
           You can also find other miscellaneous writings of mine here.
         </h2> */}
       </div>
-      <div className="flex items-center text-gray-500 text-sm gap-2 mt-6">
+      <div className="flex items-center text-gray-500 text-sm gap-2 mt-8">
         <a
           href="https://www.linkedin.com/in/oscargws/"
           className="hover:text-gray-700"
