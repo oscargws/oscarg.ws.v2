@@ -72,14 +72,15 @@ export default function Home() {
             externalLink="https://www.vanta.com"
           />
         </h2>
-        <h2 className="text-xl">
+
+        {/* <h2 className="text-xl">
           {`I also help developers improve their soft-skills in order to better sell themselves and the value of the products they build, over at `}{" "}
           <span className="block">
             <a href="https://convincingcode.com" className="text-blue-500 ">
               {`Convincing Code`}
             </a>
           </span>
-        </h2>
+        </h2> */}
 
         {/* <h2 className="text-xl">
           I also write about how Software Engineers can sharpen their
@@ -89,6 +90,7 @@ export default function Home() {
             {` `} Convincing Code
           </a>
         </h2>
+
         <h2 className="text-xl">
           You can also find other miscellaneous writings of mine here.
         </h2> */}
