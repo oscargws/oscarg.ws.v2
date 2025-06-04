@@ -31,9 +31,12 @@ export default function Home() {
             className="w-54 h-54 rounded-2xl bg-cover bg-center object-cover shadow-md transition-transform duration-300 ease-in-out hover:scale-101"
           />
           <span className="text-xs text-gray-500 pt-1">
-            {`(me talking very enthusiastically about security)`}
+            {`(me talking very enthusiastically about design)`}
           </span>
         </div>
+        <h2 className="text-xl ">
+          {`I'm currently an Enterprise Solutions Architect at Figma, helping customers uplift their Design & Engineering practices. `}
+        </h2>
         <h2 className="text-xl ">
           {`I've spent the better half of a decade working at the nexus between
           product, engineering and sales to build and sell brilliant software at
