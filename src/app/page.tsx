@@ -35,7 +35,7 @@ export default function Home() {
           </span>
         </div>
         <h2 className="text-xl ">
-          {`I'm currently an Enterprise Solutions Architect at Figma, helping customers uplift their Design & Engineering practices. `}
+          {`I'm an Enterprise Solutions Consultant at Figma, where I'm passionate about design systems and helping organisations uplift their engineering and design practices.`}
         </h2>
         <h2 className="text-xl ">
           {`I've spent the better half of a decade working at the nexus between
