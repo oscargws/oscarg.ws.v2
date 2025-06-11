@@ -49,7 +49,8 @@ const LogoCloud: React.FC = () => {
     },
   ];
 
-  const rotations = [2, -3, 1, -2, 3, 1, -1]; // Different rotation for each card
+  const rotations = [6, -5, 5, -7, 4, 5, -3]; // Different rotation for each card
+  const postRotations = [2, -1, 0, -2, 1, 2, -2]; // Different rotation for each card
 
   return (
     <div className="max-w-xl w-full px-4 mt-8 flex justify-start">
@@ -59,7 +60,7 @@ const LogoCloud: React.FC = () => {
           const cards = document.querySelectorAll('.logo-card');
           cards.forEach((card, index) => {
             const rotationChange = index === 0 ? -2 : 2; // Figma (index 0) rotates opposite direction
-            (card as HTMLElement).style.transform = `translateX(${index * 2}px) rotate(${rotations[index] + rotationChange}deg)`;
+            (card as HTMLElement).style.transform = `translateX(${index * 8}px) rotate(${postRotations[index] + rotationChange}deg)`;
           });
         }}
         onMouseLeave={() => {
@@ -75,7 +76,7 @@ const LogoCloud: React.FC = () => {
             href={company.url}
             target="_blank"
             rel="noopener noreferrer"
-            className={`logo-card relative transition-all duration-500 ease-out rounded-md border border-zinc-200 shadow-sm hover:shadow-md w-12 h-12 flex items-center justify-center ${company.name === 'Brighte' || company.name === 'Linktree' ? 'p-2' : ''}`}
+            className={`logo-card relative transition-all duration-500 ease-out rounded-md shadow-sm hover:shadow-md w-12 h-12 flex items-center justify-center ${company.name === 'Brighte' || company.name === 'Linktree' ? 'p-2' : ''}`}
             style={{
               transform: `translateX(${index * -24}px) rotate(${rotations[index]}deg)`,
               zIndex: companies.length - index,

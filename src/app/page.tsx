@@ -31,11 +31,10 @@ I'm an Enterprise Solutions Consultant at `}
           >
             Figma
           </a>
-          {`, where I focus on design systems and work with organizations to transform their engineering and design workflows.`}
+          {`, where I focus on design systems and work with organisations to transform their engineering and design workflows.`}
         </p>
         <p className="text-lg text-zinc-600">
-          {`
-I've spent nearly a decade working in Product teams from both an Engineering and GTM perspective. I ❤️ working with product and sales teams to build brilliant software.`}
+          {`I've spent the past decade working at the nexus between Product and Go-to-market teams to build brilliant, delightful software!`}
         </p>
       </div>
 
