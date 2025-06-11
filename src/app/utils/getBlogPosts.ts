@@ -26,7 +26,7 @@ export async function getBlogPosts(): Promise<BlogPost[]> {
       const source = fs.readFileSync(mdxPath, 'utf8');
       
       // Extract metadata using regex
-      const metadataMatch = source.match(/export\s+const\s+metadata\s*=\s*{([^}]+)}/s);
+      const metadataMatch = source.match(/export\s+const\s+metadata\s*=\s*{([\s\S]*?)}/m);
       
       if (metadataMatch) {
         const metadataString = metadataMatch[1];

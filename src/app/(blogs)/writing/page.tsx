@@ -21,7 +21,7 @@ async function getBlogPosts() {
 
   const posts = await Promise.all(
     blogDirs.map(async (dir) => {
-      const pagePath = join(blogsPath, dir.name, "page.tsx");
+      const pagePath = join(blogsPath, dir.name, "page.mdx");
       try {
         const content = await readFile(pagePath, "utf-8");
         // Extract metadata title using regex
@@ -40,7 +40,7 @@ async function getBlogPosts() {
               .join(" "),
         };
       } catch (error) {
-        // Fallback to directory name if page.tsx can't be read or parsed
+        // Fallback to directory name if page.mdx can't be read or parsed
         console.log(error);
         return {
           slug: dir.name,
