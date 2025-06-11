@@ -1,5 +1,6 @@
 import React from "react";
 import WritingSection from "./components/WritingSection";
+import LogoCloud from "./components/LogoCloud";
 
 export const metadata = {
   title: `Oscar Watson-Smith`,
@@ -26,7 +27,15 @@ export default function Home() {
           {`
 I'm an Enterprise Solutions Consultant at Figma, where I focus on design systems and work with organizations to transform their engineering and design workflows.`}
         </p>
+        <p className="text-lg text-zinc-600">
+          {`
+I've spent nearly a decade working in Product teams from both an Engineering and GTM perspective. I working with product and sales teams to build brilliant software.`}
+        </p>
       </div>
+      
+      {/* Logo cloud */}
+      <LogoCloud />
+      
       <WritingSection />
     </div>
   );
