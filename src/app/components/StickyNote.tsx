@@ -5,7 +5,7 @@ import Link from 'next/link';
 
 const StickyNote: React.FC = () => {
   return (
-    <Link href="/" className="block absolute -bottom-14 left-1/4 z-10">
+    <Link href="/" className="block absolute -bottom-20 left-1/10 z-10">
       <div 
         className="relative w-28 h-28 cursor-pointer group"
         style={{
