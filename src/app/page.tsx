@@ -25,17 +25,23 @@ export default function Home() {
         <h1 className="text-4xl">{`👋 Hey, I'm Oscar`}</h1>
         <p className="text-lg text-zinc-600">
           {`
-I'm an Enterprise Solutions Consultant at Figma, where I focus on design systems and work with organizations to transform their engineering and design workflows.`}
+I'm an Enterprise Solutions Consultant at `}
+          <a href="https://figma.com"
+            className="hover:text-blue-800 underline decoration-1 underline-offset-2"
+          >
+            Figma
+          </a>
+          {`, where I focus on design systems and work with organizations to transform their engineering and design workflows.`}
         </p>
         <p className="text-lg text-zinc-600">
           {`
-I've spent nearly a decade working in Product teams from both an Engineering and GTM perspective. I working with product and sales teams to build brilliant software.`}
+I've spent nearly a decade working in Product teams from both an Engineering and GTM perspective. I ❤️ working with product and sales teams to build brilliant software.`}
         </p>
       </div>
-      
+
       {/* Logo cloud */}
       <LogoCloud />
-      
+
       <WritingSection />
     </div>
   );
