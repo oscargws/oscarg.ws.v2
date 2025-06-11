@@ -3,7 +3,12 @@ import React from "react";
 const BlogLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
     <div className="flex flex-col items-center mt-12 py-2 mb-12 px-4">
-      <div className="max-w-3xl w-full">{children}</div>
+      <div className="max-w-2xl w-full">
+        {/* Paper container */}
+        <div className="bg-white shadow-xl border border-zinc-200 rounded-lg p-12">
+          {children}
+        </div>
+      </div>
     </div>
   );
 };
