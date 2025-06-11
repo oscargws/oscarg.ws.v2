@@ -4,9 +4,7 @@ import LogoCloud from "./components/LogoCloud";
 
 export const metadata = {
   title: `Oscar Watson-Smith`,
-  description: `Hey I'm Oscar. I've spent the better half of a decade working at the nexus between
-          product, engineering and sales to build and sell brilliant software at
-          companies such as Datadog & Vanta`,
+  description: `I'm an Enterprise Solutions Consultant at Figma, where I focus on design systems and work with organisations to transform their engineering and design workflows. I've spent the past decade working at the nexus between Product and Go-to-market teams to build brilliant, delightful software! `,
   keywords: [
     "Oscar",
     "Watson-Smith",
