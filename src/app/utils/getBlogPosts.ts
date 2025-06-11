@@ -1,6 +1,5 @@
 import fs from 'fs';
 import path from 'path';
-import { compileMDX } from 'next-mdx-remote/rsc';
 
 export interface BlogPost {
   slug: string;
