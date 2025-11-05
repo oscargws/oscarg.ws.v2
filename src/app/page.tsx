@@ -4,7 +4,7 @@ import LogoCloud from "./components/LogoCloud";
 
 export const metadata = {
   title: `Oscar Watson-Smith`,
-  description: `I'm an Enterprise Solutions Consultant at Figma, where I focus on design systems and work with organisations to transform their engineering and design workflows. I've spent the past decade working at the nexus between Product and Go-to-market teams to build brilliant, delightful software! `,
+  description: `I'm a Senior Sales Engineer at Figma. I've spent the past decade working at the nexus between Product and Go-to-market teams to build brilliant, delightful software! `,
   keywords: [
     "Oscar",
     "Watson-Smith",
@@ -23,13 +23,12 @@ export default function Home() {
         <h1 className="text-4xl">{`👋 Hey, I'm Oscar`}</h1>
         <p className="text-lg text-zinc-600">
           {`
-I'm an Enterprise Solutions Consultant at `}
+I'm a Senior Sales Engineer at `}
           <a href="https://figma.com"
             className="hover:text-blue-800 underline decoration-1 underline-offset-2"
           >
             Figma
           </a>
-          {`, where I focus on design systems and work with organisations to transform their engineering and design workflows.`}
         </p>
         <p className="text-lg text-zinc-600">
           {`I've spent the past decade working at the nexus between Product and Go-to-market teams to build brilliant, delightful software!`}
