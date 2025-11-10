@@ -1,6 +1,5 @@
 import React from "react";
 import WritingSection from "./components/WritingSection";
-import LogoCloud from "./components/LogoCloud";
 
 export const metadata = {
   title: `Oscar Watson-Smith`,
