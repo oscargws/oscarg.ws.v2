@@ -4,7 +4,7 @@ import LogoCloud from "./components/LogoCloud";
 
 export const metadata = {
   title: `Oscar Watson-Smith`,
-  description: `I'm a Senior Sales Engineer at Figma. I've spent the past decade working at the nexus between Product and Go-to-market teams to build brilliant, delightful software! `,
+  description: `I've worked in the tech industry for over a decade wearing many hats. I've built products as an engineer, shifted between frontend and backend, to ultimately end up as people facing as I could get, implementing solutions for them.`,
   keywords: [
     "Oscar",
     "Watson-Smith",
@@ -22,21 +22,18 @@ export default function Home() {
       <div className="max-w-xl gap-6 flex flex-col mt-8 sm:mt-24 px-4">
         <h1 className="text-4xl">{`👋 Hey, I'm Oscar`}</h1>
         <p className="text-lg text-zinc-600">
-          {`
-I'm a Senior Sales Engineer at `}
-          <a href="https://figma.com"
-            className="hover:text-blue-800 underline decoration-1 underline-offset-2"
-          >
-            Figma
-          </a>
+          {`I've worked in the tech industry for over a decade wearing many hats. I've built products as an engineer, shifted between frontend and backend, to ultimately end up as people facing as I could get, implementing solutions for them.`}
         </p>
         <p className="text-lg text-zinc-600">
-          {`I've spent the past decade working at the nexus between Product and Go-to-market teams to build brilliant, delightful software!`}
+          {`Throughout it all I've had a genuine love of technology and what it can do. The novelty of being able to build anything, and share it with anyone, is yet to wear off on me.`}
+        </p>
+         <p className="text-lg text-zinc-600">
+          {`I also angel invest in early stage startups operating in the design, frontend and observability space. If you're buiding in this area, I'd love to chat.`}
         </p>
       </div>
 
-      {/* Logo cloud */}
-      <LogoCloud />
+      {/* Logo cloud 
+      <LogoCloud />*/}
 
       <WritingSection />
     </div>
