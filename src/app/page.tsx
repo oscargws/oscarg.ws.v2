@@ -27,7 +27,7 @@ export default function Home() {
           {`Throughout it all I've had a genuine love of technology and what it can do. The novelty of being able to build anything, and share it with anyone, is yet to wear off on me.`}
         </p>
         <p className="text-lg text-zinc-600">
-          {`I'm currently working on `<a href="https://redbark.co">Redbark</a>{`, a platform for Aussie's to manage their finances and net worth with their own hands.`}
+          {`I'm currently working on `}<a href="https://redbark.co">Redbark</a>{`, a platform for Aussie's to manage their finances and net worth with their own hands.`}
         </p>
         <p className="text-lg text-zinc-600">
           {`I also angel invest in early stage startups operating in the design, frontend and observability space. If you're buiding in this area, I'd love to chat.`}
