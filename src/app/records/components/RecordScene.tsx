@@ -3,6 +3,8 @@
 import { Canvas } from "@react-three/fiber";
 import { useRef, useState, useCallback } from "react";
 import Link from "next/link";
+import { useControls } from "leva";
+import { PerspectiveCamera } from "@react-three/drei";
 import { Record as RecordType } from "../lib/discogs";
 import RecordMesh from "./Record";
 import RecordInfo from "./RecordInfo";
@@ -17,8 +19,19 @@ export default function RecordScene({ records }: RecordSceneProps) {
   const [hoveredRecord, setHoveredRecord] = useState<RecordType | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // Debug controls
+  const { camX, camY, camZ, camRotX, fov, spacing, leanAngle } = useControls({
+    camX: { value: 0, min: -10, max: 10, step: 0.1 },
+    camY: { value: 1, min: -5, max: 10, step: 0.1 },
+    camZ: { value: 6, min: 1, max: 20, step: 0.1 },
+    camRotX: { value: Math.PI / 4, min: -Math.PI, max: Math.PI, step: 0.01 },
+    fov: { value: 50, min: 20, max: 120, step: 1 },
+    spacing: { value: 0.12, min: 0.05, max: 0.5, step: 0.01 },
+    leanAngle: { value: 1.2, min: 0, max: Math.PI / 2, step: 0.01 },
+  });
+
   // Vertical spacing between records
-  const recordSpacing = 0.12;
+  const recordSpacing = spacing;
   const totalHeight = records.length * recordSpacing;
   const minY = -5;
   const maxY = totalHeight;
@@ -54,16 +67,15 @@ export default function RecordScene({ records }: RecordSceneProps) {
       onWheel={handleWheel}
       style={{ touchAction: "none" }}
     >
-      <Canvas
-        camera={{
-          position: [0, 1, 6],
-          rotation: [Math.PI / 4, 0, 0],
-          fov: 50,
-          near: 0.1,
-          far: 200,
-        }}
-        onPointerMissed={handleBackgroundClick}
-      >
+      <Canvas onPointerMissed={handleBackgroundClick}>
+        <PerspectiveCamera
+          makeDefault
+          position={[camX, camY, camZ]}
+          rotation={[camRotX, 0, 0]}
+          fov={fov}
+          near={0.1}
+          far={200}
+        />
         <color attach="background" args={["#faf8f5"]} />
 
         {/* Lighting */}
@@ -84,6 +96,7 @@ export default function RecordScene({ records }: RecordSceneProps) {
                 setHoveredRecord(hovered ? record : null)
               }
               spacing={recordSpacing}
+              leanAngle={leanAngle}
             />
           ))}
         </group>

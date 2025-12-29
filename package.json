@@ -16,6 +16,7 @@
     "@react-three/fiber": "^9.4.2",
     "@types/mdx": "^2.0.13",
     "highlight.js": "^11.11.1",
+    "leva": "^0.10.1",
     "next": "15.2.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

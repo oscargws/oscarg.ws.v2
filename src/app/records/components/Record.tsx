@@ -14,6 +14,7 @@ interface RecordMeshProps {
   onClick: () => void;
   onHover: (hovered: boolean) => void;
   spacing: number;
+  leanAngle: number;
 }
 
 // Sleeve dimensions
@@ -98,6 +99,7 @@ export default function RecordMesh({
   onClick,
   onHover,
   spacing,
+  leanAngle,
 }: RecordMeshProps) {
   const groupRef = useRef<THREE.Group>(null);
 
@@ -114,9 +116,6 @@ export default function RecordMesh({
 
   // Position: stacked vertically (Y axis)
   const yPosition = index * spacing;
-
-  // Lean angle (tilted back like ////)
-  const leanAngle = 1.2; // radians, leaning forward so we see from above
 
   return (
     <group
