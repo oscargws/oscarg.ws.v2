@@ -2,7 +2,7 @@
 
 import { useRef, useState, useMemo, Suspense } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
-import { useTexture } from "@react-three/drei";
+import { useTexture, Text } from "@react-three/drei";
 import * as THREE from "three";
 import { Record as RecordType } from "../lib/discogs";
 
@@ -21,6 +21,63 @@ interface RecordMeshProps {
 // Sleeve dimensions
 const SLEEVE_SIZE = 2;
 const SLEEVE_DEPTH = 0.015;
+
+// Genre divider - full card with tab at top left
+export function GenreDivider({
+  genre,
+  position,
+  spacing,
+  leanAngle,
+}: {
+  genre: string;
+  position: number;
+  spacing: number;
+  leanAngle: number;
+}) {
+  const baseY = position * spacing;
+  const tabWidth = 0.5;
+  const tabHeight = 0.12;
+  const tabDepth = SLEEVE_DEPTH;
+
+  const genreColor = getGenreColor(genre);
+  const stickerRadius = 0.035;
+
+  return (
+    <group
+      position={[0, baseY, 0]}
+      rotation={[leanAngle, 0, 0]}
+    >
+      {/* Main card - same size as record sleeve */}
+      <mesh>
+        <boxGeometry args={[SLEEVE_SIZE, SLEEVE_SIZE, SLEEVE_DEPTH]} />
+        <meshStandardMaterial color="#f5f0e6" roughness={0.95} />
+      </mesh>
+
+      {/* Tab at top left */}
+      <mesh position={[-SLEEVE_SIZE / 2 + tabWidth / 2 + 0.1, SLEEVE_SIZE / 2 + tabHeight / 2, 0]}>
+        <boxGeometry args={[tabWidth, tabHeight, tabDepth]} />
+        <meshStandardMaterial color="#f5f0e6" roughness={0.95} />
+      </mesh>
+
+      {/* Genre color sticker on tab */}
+      <mesh position={[-SLEEVE_SIZE / 2 + stickerRadius + 0.15, SLEEVE_SIZE / 2 + tabHeight / 2, SLEEVE_DEPTH / 2 + 0.001]}>
+        <circleGeometry args={[stickerRadius, 16]} />
+        <meshStandardMaterial color={genreColor} roughness={0.6} />
+      </mesh>
+
+      {/* Genre text on tab */}
+      <Text
+        position={[-SLEEVE_SIZE / 2 + tabWidth / 2 + 0.18, SLEEVE_SIZE / 2 + tabHeight / 2, SLEEVE_DEPTH / 2 + 0.001]}
+        fontSize={0.05}
+        color="#333333"
+        anchorX="center"
+        anchorY="middle"
+      >
+        {genre.toLowerCase()}
+      </Text>
+    </group>
+  );
+}
 
 // Vinyl dimensions
 const VINYL_RADIUS = 0.9;
@@ -44,21 +101,21 @@ function TexturedSleeve({
       map: texture,
       roughness: 0.8,
     });
-    const sideMaterial = new THREE.MeshStandardMaterial({
-      color: "#1a1a1a",
+    const edgeMaterial = new THREE.MeshStandardMaterial({
+      color: "#f5f5f5",
       roughness: 0.9,
     });
     const backMaterial = new THREE.MeshStandardMaterial({
-      color: "#222222",
+      color: "#e8e8e8",
       roughness: 0.9,
     });
 
     // Box faces: +X, -X, +Y, -Y, +Z (front/cover), -Z (back)
     return [
-      sideMaterial,   // +X
-      sideMaterial,   // -X
-      sideMaterial,   // +Y (top edge)
-      sideMaterial,   // -Y (bottom edge)
+      edgeMaterial,   // +X
+      edgeMaterial,   // -X
+      edgeMaterial,   // +Y (top edge)
+      edgeMaterial,   // -Y (bottom edge)
       coverMaterial,  // +Z (cover facing camera)
       backMaterial,   // -Z (back)
     ];
@@ -129,17 +186,187 @@ function getGenreColor(genre: string | undefined): string {
   return GENRE_COLORS["Unknown"];
 }
 
-// Plain black sleeve for records that only have label images
+// Seeded random for consistent sticker placement per record
+function seededRandom(seed: number) {
+  const x = Math.sin(seed * 9999) * 10000;
+  return x - Math.floor(x);
+}
+
+// Plain sleeve using blank texture for records that only have label images
 function PlainSleeve({
   genre,
+  recordId,
+  artist,
+  title,
   onClick,
   onHover,
 }: {
   genre?: string;
+  recordId: number;
+  artist: string;
+  title: string;
   onClick: () => void;
   onHover: (hovered: boolean) => void;
 }) {
+  // Alternate between blank textures based on record ID
+  const useBlackTexture = recordId % 2 === 0;
+  const texturePath = useBlackTexture ? "/records/blank-black.jpg" : "/records/blank.jpeg";
+  const texture = useTexture(texturePath);
+  texture.colorSpace = THREE.SRGBColorSpace;
+
+  // Rotate texture at 90° intervals based on record ID for variation
+  const rotationIndex = recordId % 4;
+  const clonedTexture = useMemo(() => {
+    const t = texture.clone();
+    t.center.set(0.5, 0.5);
+    t.rotation = (rotationIndex * Math.PI) / 2; // 0, 90, 180, or 270 degrees
+    t.needsUpdate = true;
+    return t;
+  }, [texture, rotationIndex]);
+
   const stickerColor = getGenreColor(genre);
+
+  // Vary sticker position slightly based on record ID
+  const offsetX = (seededRandom(recordId) - 0.5) * 0.15;
+  const offsetY = (seededRandom(recordId + 1) - 0.5) * 0.15;
+
+  // Vary label sticker position and rotation
+  const labelOffsetX = (seededRandom(recordId + 2) - 0.5) * 0.1;
+  const labelOffsetY = (seededRandom(recordId + 3) - 0.5) * 0.1;
+  const labelRotation = (seededRandom(recordId + 4) - 0.5) * (Math.PI / 90); // -1 to +1 degrees
+
+  // Rounded rectangle shape for label
+  const labelShape = useMemo(() => {
+    const width = 0.35;
+    const height = 0.2;
+    const radius = 0.02;
+    const shape = new THREE.Shape();
+
+    shape.moveTo(-width / 2 + radius, -height / 2);
+    shape.lineTo(width / 2 - radius, -height / 2);
+    shape.quadraticCurveTo(width / 2, -height / 2, width / 2, -height / 2 + radius);
+    shape.lineTo(width / 2, height / 2 - radius);
+    shape.quadraticCurveTo(width / 2, height / 2, width / 2 - radius, height / 2);
+    shape.lineTo(-width / 2 + radius, height / 2);
+    shape.quadraticCurveTo(-width / 2, height / 2, -width / 2, height / 2 - radius);
+    shape.lineTo(-width / 2, -height / 2 + radius);
+    shape.quadraticCurveTo(-width / 2, -height / 2, -width / 2 + radius, -height / 2);
+
+    return shape;
+  }, []);
+
+  // Worn white label material
+  const labelMaterial = useMemo(() => {
+    return new THREE.ShaderMaterial({
+      uniforms: {
+        uSeed: { value: recordId },
+      },
+      vertexShader: `
+        varying vec2 vUv;
+        void main() {
+          vUv = uv;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: `
+        uniform float uSeed;
+        varying vec2 vUv;
+
+        float random(vec2 st) {
+          return fract(sin(dot(st.xy, vec2(12.9898, 78.233))) * 43758.5453123);
+        }
+
+        void main() {
+          // Muted off-white base - less bright for matte look
+          vec3 baseColor = vec3(0.88, 0.86, 0.82);
+
+          // Paper grain noise
+          float noise = random(vUv * 100.0 + uSeed) * 0.06;
+          float noise2 = random(vUv * 30.0 + uSeed * 2.0) * 0.04;
+
+          // Age spots / yellowing
+          float spots = random(vUv * 10.0 + uSeed * 3.0);
+          float yellowing = spots > 0.8 ? 0.02 : 0.0;
+
+          vec3 finalColor = baseColor - noise - noise2;
+          finalColor.r += yellowing;
+          finalColor.g += yellowing * 0.8;
+
+          // Worn edges
+          float edgeDist = min(min(vUv.x, 1.0 - vUv.x), min(vUv.y, 1.0 - vUv.y));
+          float edgeWear = smoothstep(0.0, 0.05, edgeDist);
+          finalColor *= 0.92 + edgeWear * 0.08;
+
+          gl_FragColor = vec4(finalColor, 1.0);
+        }
+      `,
+    });
+  }, [recordId]);
+
+  // Create noisy/paper texture effect with custom shader material for sticker
+  const stickerMaterial = useMemo(() => {
+    return new THREE.ShaderMaterial({
+      uniforms: {
+        uColor: { value: new THREE.Color(stickerColor) },
+        uSeed: { value: recordId },
+      },
+      vertexShader: `
+        varying vec2 vUv;
+        void main() {
+          vUv = uv;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: `
+        uniform vec3 uColor;
+        uniform float uSeed;
+        varying vec2 vUv;
+
+        float random(vec2 st) {
+          return fract(sin(dot(st.xy, vec2(12.9898, 78.233))) * 43758.5453123);
+        }
+
+        void main() {
+          vec3 desaturated = mix(uColor, vec3(dot(uColor, vec3(0.299, 0.587, 0.114))), 0.3);
+          vec3 baseColor = desaturated * 0.55;
+          float noise = random(vUv * 80.0 + uSeed) * 0.2;
+          float noise2 = random(vUv * 20.0 + uSeed * 2.0) * 0.1;
+          vec3 finalColor = baseColor * (0.8 + noise + noise2);
+          float dist = length(vUv - 0.5) * 2.0;
+          finalColor *= 1.0 - dist * 0.2;
+          finalColor += vec3(0.02, 0.015, 0.0);
+          gl_FragColor = vec4(finalColor, 1.0);
+        }
+      `,
+    });
+  }, [stickerColor, recordId]);
+
+  const sleeveMaterials = useMemo(() => {
+    const coverMaterial = new THREE.MeshStandardMaterial({
+      map: clonedTexture,
+      roughness: 0.8,
+    });
+    // Use dark edges for black texture, light edges for white texture
+    const edgeColor = useBlackTexture ? "#1a1a1a" : "#f5f5f5";
+    const backColor = useBlackTexture ? "#222222" : "#e8e8e8";
+    const edgeMaterial = new THREE.MeshStandardMaterial({
+      color: edgeColor,
+      roughness: 0.9,
+    });
+    const backMaterial = new THREE.MeshStandardMaterial({
+      color: backColor,
+      roughness: 0.9,
+    });
+
+    return [
+      edgeMaterial,   // +X
+      edgeMaterial,   // -X
+      edgeMaterial,   // +Y
+      edgeMaterial,   // -Y
+      coverMaterial,  // +Z (front)
+      backMaterial,   // -Z (back)
+    ];
+  }, [clonedTexture, useBlackTexture]);
 
   return (
     <group>
@@ -157,18 +384,57 @@ function PlainSleeve({
           onHover(false);
           document.body.style.cursor = "auto";
         }}
+        material={sleeveMaterials}
         castShadow
         receiveShadow
       >
         <boxGeometry args={[SLEEVE_SIZE, SLEEVE_SIZE, SLEEVE_DEPTH]} />
-        <meshStandardMaterial color="#1a1a1a" roughness={0.9} />
       </mesh>
 
-      {/* Genre sticker - top left corner */}
-      <mesh position={[-SLEEVE_SIZE / 2 + 0.25, SLEEVE_SIZE / 2 - 0.25, SLEEVE_DEPTH / 2 + 0.001]}>
-        <circleGeometry args={[0.15, 32]} />
-        <meshStandardMaterial color={stickerColor} roughness={0.5} />
+      {/* Genre sticker - top left corner with varied placement */}
+      <mesh position={[-SLEEVE_SIZE / 2 + 0.2 + offsetX, SLEEVE_SIZE / 2 - 0.2 + offsetY, SLEEVE_DEPTH / 2 + 0.001]}>
+        <circleGeometry args={[0.075, 32]} />
+        <primitive object={stickerMaterial} attach="material" />
       </mesh>
+
+      {/* White label sticker - top right with handwritten info */}
+      <group position={[
+        SLEEVE_SIZE / 2 - 0.25 + labelOffsetX,
+        SLEEVE_SIZE / 2 - 0.28 + labelOffsetY,
+        SLEEVE_DEPTH / 2 + 0.001
+      ]}>
+        {/* Sticker background - rounded rectangle */}
+        <mesh rotation={[0, 0, labelRotation]}>
+          <shapeGeometry args={[labelShape]} />
+          <primitive object={labelMaterial} attach="material" />
+        </mesh>
+
+        {/* Artist name */}
+        <Text
+          position={[0, 0.04, 0.001]}
+          fontSize={0.028}
+          color="#222222"
+          anchorX="center"
+          anchorY="middle"
+          rotation={[0, 0, labelRotation]}
+          maxWidth={0.3}
+        >
+          {artist.length > 12 ? artist.slice(0, 12) + "..." : artist}
+        </Text>
+
+        {/* Album title */}
+        <Text
+          position={[0, -0.025, 0.001]}
+          fontSize={0.022}
+          color="#444444"
+          anchorX="center"
+          anchorY="middle"
+          rotation={[0, 0, labelRotation]}
+          maxWidth={0.3}
+        >
+          {title.length > 15 ? title.slice(0, 15) + "..." : title}
+        </Text>
+      </group>
     </group>
   );
 }
@@ -184,7 +450,16 @@ function RecordSleeve({
   onHover: (hovered: boolean) => void;
 }) {
   if (record.isLabelImage) {
-    return <PlainSleeve genre={record.genre} onClick={onClick} onHover={onHover} />;
+    return (
+      <PlainSleeve
+        genre={record.genre}
+        recordId={record.id}
+        artist={record.artist}
+        title={record.title}
+        onClick={onClick}
+        onHover={onHover}
+      />
+    );
   }
   return <TexturedSleeve record={record} onClick={onClick} onHover={onHover} />;
 }
@@ -302,6 +577,10 @@ export default function RecordMesh({
   const [currentRot, setCurrentRot] = useState({ x: leanAngle, y: 0, z: 0 });
   const [vinylSlide, setVinylSlide] = useState(0);
 
+  // Staged animation: 0 = not selected, 1 = moving to center, 2 = sliding left, 3 = vinyl out
+  const [animationStage, setAnimationStage] = useState(0);
+  const [wasSelected, setWasSelected] = useState(false);
+
   // Base position in stack
   const baseY = index * spacing;
 
@@ -312,46 +591,97 @@ export default function RecordMesh({
   // Camera forward direction after X rotation: (0, sin(rotX), -cos(rotX))
   // Position in front of camera = camera.position + distance * forward
   // Add scrollOffset to compensate for parent group translation of -scrollOffset
-  const selectedPos = {
-    x: camera.position.x - 1.2, // Offset left for sleeve + vinyl layout
+  const centerPos = {
+    x: camera.position.x,
     y: camera.position.y + Math.sin(cameraRotX) * distanceFromCamera + scrollOffset,
     z: camera.position.z - Math.cos(cameraRotX) * distanceFromCamera,
   };
 
-  // Target values - when hovered, lift perpendicular to the tilted face
-  // The record is tilted back, so lift forward (Z) and slightly up (Y)
-  const hoverDistance = 1.8;
-  const targetPos = isSelected
-    ? selectedPos
-    : {
-        x: 0,
-        y: baseY + (isHovered ? hoverDistance * 0.3 : 0),
-        z: isHovered ? hoverDistance : 0,
-      };
+  const selectedPos = {
+    x: camera.position.x - 1.2, // Offset left for sleeve + vinyl layout
+    y: centerPos.y,
+    z: centerPos.z,
+  };
 
-  // When selected, match camera's X rotation so record faces the camera
-  const targetRot = isSelected
-    ? { x: cameraRotX, y: 0, z: 0 } // Face camera by matching its tilt
-    : { x: leanAngle, y: 0, z: 0 };
+  // Handle selection state changes
+  useFrame(() => {
+    if (isSelected && !wasSelected) {
+      // Just became selected - start animation sequence
+      setAnimationStage(1);
+      setWasSelected(true);
+    } else if (!isSelected && wasSelected) {
+      // Just became deselected - reset
+      setAnimationStage(0);
+      setWasSelected(false);
+    }
+  });
 
-  const targetVinylSlide = isSelected ? 2.4 : 0; // Slide vinyl to the right
+  // Determine target position based on animation stage
+  const hoverDistance = 1.3;
+  let targetPos: { x: number; y: number; z: number };
+  let targetRot: { x: number; y: number; z: number };
+  let targetVinylSlide: number;
+
+  if (!isSelected) {
+    // Not selected - stack position or hover
+    targetPos = {
+      x: 0,
+      y: baseY + (isHovered ? hoverDistance * 0.3 : 0),
+      z: isHovered ? hoverDistance : 0,
+    };
+    targetRot = { x: leanAngle, y: 0, z: 0 };
+    targetVinylSlide = 0;
+  } else if (animationStage === 1) {
+    // Stage 1: Move to center
+    targetPos = centerPos;
+    targetRot = { x: cameraRotX, y: 0, z: 0 };
+    targetVinylSlide = 0;
+  } else if (animationStage === 2) {
+    // Stage 2: Slide left
+    targetPos = selectedPos;
+    targetRot = { x: cameraRotX, y: 0, z: 0 };
+    targetVinylSlide = 0;
+  } else {
+    // Stage 3: Vinyl slides out
+    targetPos = selectedPos;
+    targetRot = { x: cameraRotX, y: 0, z: 0 };
+    targetVinylSlide = 2.4;
+  }
 
   useFrame((_, delta) => {
-    const speed = 4;
+    const speed = 5;
+    const threshold = 0.05;
 
-    setCurrentPos((prev) => ({
-      x: THREE.MathUtils.lerp(prev.x, targetPos.x, delta * speed),
-      y: THREE.MathUtils.lerp(prev.y, targetPos.y, delta * speed),
-      z: THREE.MathUtils.lerp(prev.z, targetPos.z, delta * speed),
-    }));
+    // Animate position
+    const newPos = {
+      x: THREE.MathUtils.lerp(currentPos.x, targetPos.x, delta * speed),
+      y: THREE.MathUtils.lerp(currentPos.y, targetPos.y, delta * speed),
+      z: THREE.MathUtils.lerp(currentPos.z, targetPos.z, delta * speed),
+    };
+    setCurrentPos(newPos);
 
+    // Animate rotation
     setCurrentRot((prev) => ({
       x: THREE.MathUtils.lerp(prev.x, targetRot.x, delta * speed),
       y: THREE.MathUtils.lerp(prev.y, targetRot.y, delta * speed),
       z: THREE.MathUtils.lerp(prev.z, targetRot.z, delta * speed),
     }));
 
+    // Animate vinyl
     setVinylSlide((prev) => THREE.MathUtils.lerp(prev, targetVinylSlide, delta * speed));
+
+    // Check if current stage animation is complete, then advance
+    if (isSelected) {
+      const posDistance = Math.abs(newPos.x - targetPos.x) +
+                          Math.abs(newPos.y - targetPos.y) +
+                          Math.abs(newPos.z - targetPos.z);
+
+      if (animationStage === 1 && posDistance < threshold) {
+        setAnimationStage(2);
+      } else if (animationStage === 2 && posDistance < threshold) {
+        setAnimationStage(3);
+      }
+    }
   });
 
   return (
@@ -365,10 +695,10 @@ export default function RecordMesh({
         <RecordSleeve record={record} onClick={onClick} onHover={onHover} />
       </Suspense>
 
-      {/* Vinyl disc - only render when selected, slides to the right */}
-      {isSelected && (
+      {/* Vinyl disc - only render once sleeve is in final position (stage 3) */}
+      {isSelected && animationStage === 3 && (
         <group
-          position={[vinylSlide, 0, 0.01]}
+          position={[vinylSlide, 0, -0.02]}
           rotation={[0, 0, 0]}
         >
           <VinylDisc

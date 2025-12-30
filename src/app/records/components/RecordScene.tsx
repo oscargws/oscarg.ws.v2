@@ -1,14 +1,13 @@
 "use client";
 
 import { Canvas, useThree, useFrame } from "@react-three/fiber";
-import { useRef, useState, useCallback } from "react";
+import { useRef, useState, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { useControls } from "leva";
 import { PerspectiveCamera } from "@react-three/drei";
 import * as THREE from "three";
 import { Record as RecordType } from "../lib/discogs";
-import RecordMesh from "./Record";
-import RecordInfo from "./RecordInfo";
+import RecordMesh, { GenreDivider } from "./Record";
 
 // Backdrop that appears between stack and selected record
 function Backdrop({ visible }: { visible: boolean }) {
@@ -48,6 +47,15 @@ export default function RecordScene({ records }: RecordSceneProps) {
   const [hasScrolled, setHasScrolled] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // Sort records by genre so they're grouped together
+  const sortedRecords = useMemo(() => {
+    return [...records].sort((a, b) => {
+      const genreA = a.genre || "Unknown";
+      const genreB = b.genre || "Unknown";
+      return genreA.localeCompare(genreB);
+    });
+  }, [records]);
+
   // Debug controls
   const { camX, camY, camZ, camRotX, fov } = useControls("Camera", {
     camX: { value: 0, min: -10, max: 10, step: 0.1 },
@@ -70,9 +78,38 @@ export default function RecordScene({ records }: RecordSceneProps) {
 
   // Vertical spacing between records
   const recordSpacing = spacing;
-  const totalHeight = records.length * recordSpacing;
-  const minY = -5;
-  const maxY = totalHeight;
+
+  // Build interleaved list of records and dividers
+  // Each item has a position in the stack
+  const { items, totalItems } = useMemo(() => {
+    const result: Array<{ type: 'record' | 'divider'; data: RecordType | string; position: number }> = [];
+    let currentPosition = 0;
+    let lastGenre = "";
+
+    sortedRecords.forEach((record) => {
+      const genre = record.genre || "Unknown";
+
+      // Add divider before first record of new genre
+      if (genre !== lastGenre) {
+        result.push({ type: 'divider', data: genre, position: currentPosition });
+        currentPosition++;
+        lastGenre = genre;
+      }
+
+      // Add the record
+      result.push({ type: 'record', data: record, position: currentPosition });
+      currentPosition++;
+    });
+
+    return { items: result, totalItems: currentPosition };
+  }, [sortedRecords]);
+
+  const totalHeight = totalItems * recordSpacing;
+
+  const { minY, maxY } = useControls("Scroll", {
+    minY: { value: -5, min: -20, max: 0, step: 0.5 },
+    maxY: { value: totalHeight, min: 0, max: totalHeight + 20, step: 0.5 },
+  });
 
   const handleWheel = useCallback(
     (e: React.WheelEvent) => {
@@ -126,31 +163,42 @@ export default function RecordScene({ records }: RecordSceneProps) {
 
         {/* Records group - vertical column, pan with scroll */}
         <group position={[0, -cameraY, 0]}>
-          {records.map((record, index) => (
-            <RecordMesh
-              key={record.id}
-              record={record}
-              index={index}
-              isSelected={selectedRecord?.id === record.id}
-              isHovered={hoveredRecord?.id === record.id && !selectedRecord}
-              onClick={() => handleRecordClick(record)}
-              onHover={(hovered) =>
-                setHoveredRecord(hovered ? record : null)
-              }
-              spacing={recordSpacing}
-              leanAngle={leanAngle}
-              scrollOffset={cameraY}
-            />
-          ))}
+          {items.map((item) => {
+            if (item.type === 'divider') {
+              return (
+                <GenreDivider
+                  key={`divider-${item.data}`}
+                  genre={item.data as string}
+                  position={item.position}
+                  spacing={recordSpacing}
+                  leanAngle={leanAngle}
+                />
+              );
+            } else {
+              const record = item.data as RecordType;
+              return (
+                <RecordMesh
+                  key={record.id}
+                  record={record}
+                  index={item.position}
+                  isSelected={selectedRecord?.id === record.id}
+                  isHovered={hoveredRecord?.id === record.id && !selectedRecord}
+                  onClick={() => handleRecordClick(record)}
+                  onHover={(hovered) =>
+                    setHoveredRecord(hovered ? record : null)
+                  }
+                  spacing={recordSpacing}
+                  leanAngle={leanAngle}
+                  scrollOffset={cameraY}
+                />
+              );
+            }
+          })}
         </group>
 
-        {/* Dark backdrop between stack and selected record */}
-        <Backdrop visible={!!selectedRecord} />
       </Canvas>
 
 
-      {/* Info overlay */}
-      <RecordInfo record={hoveredRecord || selectedRecord} />
 
       {/* Back button */}
       <Link
@@ -164,6 +212,25 @@ export default function RecordScene({ records }: RecordSceneProps) {
       {!selectedRecord && !hasScrolled && (
         <div className="absolute bottom-6 left-1/2 -translate-x-1/2 text-zinc-400 text-sm animate-pulse">
           Scroll to browse
+        </div>
+      )}
+
+      {/* End of collection message */}
+      {!selectedRecord && cameraY >= totalHeight - 2 && (
+        <div className="absolute bottom-12 left-1/2 -translate-x-1/2 text-center transition-all duration-300">
+          <p className="text-zinc-600 text-sm">
+            Thanks for digging!
+            <br/>
+            Follow me on X at{" "}
+            <a
+              href="https://x.com/oscargws_"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-zinc-900 hover:underline"
+            >
+              @oscargws_
+            </a>
+          </p>
         </div>
       )}
     </div>
