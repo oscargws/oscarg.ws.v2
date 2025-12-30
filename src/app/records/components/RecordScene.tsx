@@ -3,11 +3,12 @@
 import { Canvas, useThree, useFrame } from "@react-three/fiber";
 import { useRef, useState, useCallback, useMemo } from "react";
 import Link from "next/link";
-import { useControls } from "leva";
+import { useControls, Leva } from "leva";
 import { PerspectiveCamera } from "@react-three/drei";
 import * as THREE from "three";
 import { Record as RecordType } from "../lib/discogs";
 import RecordMesh, { GenreDivider } from "./Record";
+import Player from "./Player";
 
 // Backdrop that appears between stack and selected record
 function Backdrop({ visible }: { visible: boolean }) {
@@ -41,10 +42,11 @@ interface RecordSceneProps {
 }
 
 export default function RecordScene({ records }: RecordSceneProps) {
-  const [cameraY, setCameraY] = useState(-5);
+  const [cameraY, setCameraY] = useState(-6);
   const [selectedRecord, setSelectedRecord] = useState<RecordType | null>(null);
   const [hoveredRecord, setHoveredRecord] = useState<RecordType | null>(null);
   const [hasScrolled, setHasScrolled] = useState(false);
+  const scrollDistanceRef = useRef(0);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Sort records by genre so they're grouped together
@@ -60,13 +62,13 @@ export default function RecordScene({ records }: RecordSceneProps) {
   const { camX, camY, camZ, camRotX, fov } = useControls("Camera", {
     camX: { value: 0, min: -10, max: 10, step: 0.1 },
     camY: { value: 1, min: -5, max: 10, step: 0.1 },
-    camZ: { value: 6, min: 1, max: 20, step: 0.1 },
-    camRotX: { value: Math.PI / 4, min: -Math.PI, max: Math.PI, step: 0.01 },
-    fov: { value: 40, min: 20, max: 120, step: 1 },
+    camZ: { value: 4.9, min: 1, max: 20, step: 0.1 },
+    camRotX: { value: 0.87, min: -Math.PI, max: Math.PI, step: 0.01 },
+    fov: { value: 32, min: 20, max: 120, step: 1 },
   });
 
   const { spacing, leanAngle } = useControls("Records", {
-    spacing: { value: 0.12, min: 0.05, max: 0.5, step: 0.01 },
+    spacing: { value: 0.19, min: 0.05, max: 0.5, step: 0.01 },
     leanAngle: { value: 1.2, min: 0, max: Math.PI / 2, step: 0.01 },
   });
 
@@ -107,7 +109,7 @@ export default function RecordScene({ records }: RecordSceneProps) {
   const totalHeight = totalItems * recordSpacing;
 
   const { minY, maxY } = useControls("Scroll", {
-    minY: { value: -5, min: -20, max: 0, step: 0.5 },
+    minY: { value: -6, min: -20, max: 0, step: 0.5 },
     maxY: { value: totalHeight, min: 0, max: totalHeight + 20, step: 0.5 },
   });
 
@@ -119,16 +121,25 @@ export default function RecordScene({ records }: RecordSceneProps) {
       e.preventDefault();
       const delta = e.deltaY * 0.01;
       setCameraY((prev) => Math.max(minY, Math.min(maxY, prev + delta)));
-      setHasScrolled(true);
+
+      // Track scroll distance and hide hint after 50px
+      if (!hasScrolled) {
+        scrollDistanceRef.current += Math.abs(e.deltaY);
+        if (scrollDistanceRef.current >= 50) {
+          setHasScrolled(true);
+        }
+      }
     },
-    [minY, maxY, selectedRecord]
+    [minY, maxY, selectedRecord, hasScrolled]
   );
 
   const handleRecordClick = useCallback(
     (record: RecordType) => {
       if (selectedRecord?.id === record.id) {
+        // Clicking selected record deselects it
         setSelectedRecord(null);
-      } else {
+      } else if (!selectedRecord) {
+        // Only allow selecting if nothing is selected
         setSelectedRecord(record);
       }
     },
@@ -146,7 +157,13 @@ export default function RecordScene({ records }: RecordSceneProps) {
       onWheel={handleWheel}
       style={{ touchAction: "none" }}
     >
-      <Canvas onPointerMissed={handleBackgroundClick}>
+      <Leva hidden={process.env.NODE_ENV === "production"} />
+      <Canvas
+        onPointerMissed={handleBackgroundClick}
+        dpr={[1, 1.5]} // Limit pixel ratio
+        performance={{ min: 0.5 }} // Allow frame drops
+        gl={{ antialias: true, powerPreference: "high-performance" }}
+      >
         <PerspectiveCamera
           makeDefault
           position={[camX, camY, camZ]}
@@ -160,10 +177,21 @@ export default function RecordScene({ records }: RecordSceneProps) {
         {/* Lighting */}
         <ambientLight intensity={0.8} />
         <directionalLight position={[5, 5, 10]} intensity={0.5} />
+        {/* Front light for selected vinyl */}
+        <pointLight position={[0, 2, 8]} intensity={1.5} distance={15} />
 
         {/* Records group - vertical column, pan with scroll */}
         <group position={[0, -cameraY, 0]}>
           {items.map((item) => {
+            // Virtualization: only render items within view range
+            const itemY = item.position * recordSpacing;
+            const viewDistance = 9; // How many units above/below camera to render
+            const isVisible = Math.abs(itemY - cameraY) < viewDistance;
+            const isSelected = item.type === 'record' && selectedRecord?.id === (item.data as RecordType).id;
+
+            // Always render selected record, skip others outside view
+            if (!isVisible && !isSelected) return null;
+
             if (item.type === 'divider') {
               return (
                 <GenreDivider
@@ -181,7 +209,7 @@ export default function RecordScene({ records }: RecordSceneProps) {
                   key={record.id}
                   record={record}
                   index={item.position}
-                  isSelected={selectedRecord?.id === record.id}
+                  isSelected={isSelected}
                   isHovered={hoveredRecord?.id === record.id && !selectedRecord}
                   onClick={() => handleRecordClick(record)}
                   onHover={(hovered) =>
@@ -198,14 +226,18 @@ export default function RecordScene({ records }: RecordSceneProps) {
 
       </Canvas>
 
-
+      {/* Player */}
+      <Player record={selectedRecord} onClose={() => setSelectedRecord(null)} />
 
       {/* Back button */}
       <Link
         href="/"
-        className="absolute top-6 left-6 text-zinc-500 hover:text-zinc-900 transition-colors text-sm"
+        className="absolute top-6 left-6 flex items-center gap-1.5 px-3 py-1.5 bg-zinc-100 hover:bg-zinc-200 text-zinc-600 hover:text-zinc-900 rounded-full transition-all text-sm font-medium"
       >
-        ← Back
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+        </svg>
+        Back
       </Link>
 
       {/* Scroll hint */}

@@ -411,28 +411,28 @@ function PlainSleeve({
 
         {/* Artist name */}
         <Text
-          position={[0, 0.04, 0.001]}
-          fontSize={0.028}
+          position={[-0.16, 0.04, 0.001]}
+          fontSize={0.026}
           color="#222222"
-          anchorX="center"
+          anchorX="left"
           anchorY="middle"
           rotation={[0, 0, labelRotation]}
-          maxWidth={0.3}
+          maxWidth={0.32}
         >
-          {artist.length > 12 ? artist.slice(0, 12) + "..." : artist}
+          {artist.length > 18 ? artist.slice(0, 18) + "..." : artist}
         </Text>
 
         {/* Album title */}
         <Text
-          position={[0, -0.025, 0.001]}
-          fontSize={0.022}
+          position={[-0.16, -0.025, 0.001]}
+          fontSize={0.02}
           color="#444444"
-          anchorX="center"
+          anchorX="left"
           anchorY="middle"
           rotation={[0, 0, labelRotation]}
-          maxWidth={0.3}
+          maxWidth={0.32}
         >
-          {title.length > 15 ? title.slice(0, 15) + "..." : title}
+          {title.length > 22 ? title.slice(0, 22) + "..." : title}
         </Text>
       </group>
     </group>
@@ -531,13 +531,13 @@ function VinylDisc({ spinning, labelUrl }: { spinning: boolean; labelUrl?: strin
       {/* Main disc - faces camera */}
       <mesh>
         <circleGeometry args={[VINYL_RADIUS, 64]} />
-        <meshStandardMaterial color="#0a0a0a" roughness={0.3} metalness={0.8} side={THREE.DoubleSide} />
+        <meshStandardMaterial color="#1a1a1a" roughness={0.4} metalness={0.3} side={THREE.DoubleSide} />
       </mesh>
 
       {/* Grooves - concentric rings */}
       <mesh position={[0, 0, 0.001]}>
         <ringGeometry args={[0.35, VINYL_RADIUS - 0.02, 64]} />
-        <meshStandardMaterial color="#111" roughness={0.1} metalness={0.9} />
+        <meshStandardMaterial color="#2a2a2a" roughness={0.2} metalness={0.5} />
       </mesh>
 
       {/* Label - either textured from Discogs or generic */}
@@ -572,20 +572,24 @@ export default function RecordMesh({
   const groupRef = useRef<THREE.Group>(null);
   const { camera } = useThree();
 
-  // Animation state
-  const [currentPos, setCurrentPos] = useState({ x: 0, y: 0, z: 0 });
+  // Animation state - start from behind (negative Z) so records animate in from back
+  const baseY = index * spacing;
+  // Slight random x offset for natural stack look
+  const xOffset = useMemo(() => (seededRandom(record.id) - 0.5) * 0.03, [record.id]);
+  const [currentPos, setCurrentPos] = useState({ x: xOffset, y: baseY, z: -2 });
   const [currentRot, setCurrentRot] = useState({ x: leanAngle, y: 0, z: 0 });
   const [vinylSlide, setVinylSlide] = useState(0);
 
-  // Staged animation: 0 = not selected, 1 = moving to center, 2 = sliding left, 3 = vinyl out
+  // Staged animation:
+  // Opening: 1 = moving to center, 2 = sliding left, 3 = vinyl out
+  // Closing: 4 = vinyl back in, 5 = return to stack
+  // 0 = idle in stack
   const [animationStage, setAnimationStage] = useState(0);
   const [wasSelected, setWasSelected] = useState(false);
-
-  // Base position in stack
-  const baseY = index * spacing;
+  const [isClosing, setIsClosing] = useState(false);
 
   // Calculate position in front of camera along its view direction
-  const distanceFromCamera = 4;
+  const distanceFromCamera = 5;
   const cameraRotX = camera.rotation.x;
 
   // Camera forward direction after X rotation: (0, sin(rotX), -cos(rotX))
@@ -598,7 +602,7 @@ export default function RecordMesh({
   };
 
   const selectedPos = {
-    x: camera.position.x - 1.2, // Offset left for sleeve + vinyl layout
+    x: camera.position.x - 0.9, // Offset left for sleeve + vinyl layout
     y: centerPos.y,
     z: centerPos.z,
   };
@@ -606,13 +610,14 @@ export default function RecordMesh({
   // Handle selection state changes
   useFrame(() => {
     if (isSelected && !wasSelected) {
-      // Just became selected - start animation sequence
+      // Just became selected - start opening animation sequence
       setAnimationStage(1);
       setWasSelected(true);
-    } else if (!isSelected && wasSelected) {
-      // Just became deselected - reset
-      setAnimationStage(0);
-      setWasSelected(false);
+      setIsClosing(false);
+    } else if (!isSelected && wasSelected && !isClosing) {
+      // Just became deselected - start closing animation sequence (only once)
+      setAnimationStage(4); // Start with vinyl going back in
+      setIsClosing(true);
     }
   });
 
@@ -622,10 +627,10 @@ export default function RecordMesh({
   let targetRot: { x: number; y: number; z: number };
   let targetVinylSlide: number;
 
-  if (!isSelected) {
-    // Not selected - stack position or hover
+  if (animationStage === 0) {
+    // Idle in stack - stack position or hover
     targetPos = {
-      x: 0,
+      x: xOffset,
       y: baseY + (isHovered ? hoverDistance * 0.3 : 0),
       z: isHovered ? hoverDistance : 0,
     };
@@ -641,11 +646,25 @@ export default function RecordMesh({
     targetPos = selectedPos;
     targetRot = { x: cameraRotX, y: 0, z: 0 };
     targetVinylSlide = 0;
-  } else {
+  } else if (animationStage === 3) {
     // Stage 3: Vinyl slides out
     targetPos = selectedPos;
     targetRot = { x: cameraRotX, y: 0, z: 0 };
-    targetVinylSlide = 2.4;
+    targetVinylSlide = 2.0;
+  } else if (animationStage === 4) {
+    // Stage 4: Vinyl slides back in
+    targetPos = selectedPos;
+    targetRot = { x: cameraRotX, y: 0, z: 0 };
+    targetVinylSlide = 0;
+  } else {
+    // Stage 5: Return to stack
+    targetPos = {
+      x: xOffset,
+      y: baseY,
+      z: 0,
+    };
+    targetRot = { x: leanAngle, y: 0, z: 0 };
+    targetVinylSlide = 0;
   }
 
   useFrame((_, delta) => {
@@ -671,16 +690,24 @@ export default function RecordMesh({
     setVinylSlide((prev) => THREE.MathUtils.lerp(prev, targetVinylSlide, delta * speed));
 
     // Check if current stage animation is complete, then advance
-    if (isSelected) {
-      const posDistance = Math.abs(newPos.x - targetPos.x) +
-                          Math.abs(newPos.y - targetPos.y) +
-                          Math.abs(newPos.z - targetPos.z);
+    const posDistance = Math.abs(newPos.x - targetPos.x) +
+                        Math.abs(newPos.y - targetPos.y) +
+                        Math.abs(newPos.z - targetPos.z);
+    const vinylDistance = Math.abs(vinylSlide - targetVinylSlide);
 
-      if (animationStage === 1 && posDistance < threshold) {
-        setAnimationStage(2);
-      } else if (animationStage === 2 && posDistance < threshold) {
-        setAnimationStage(3);
-      }
+    // Opening animation stages
+    if (animationStage === 1 && posDistance < threshold) {
+      setAnimationStage(2);
+    } else if (animationStage === 2 && posDistance < threshold) {
+      setAnimationStage(3);
+    }
+    // Closing animation stages
+    else if (animationStage === 4 && vinylDistance < threshold) {
+      setAnimationStage(5);
+    } else if (animationStage === 5 && posDistance < threshold) {
+      setAnimationStage(0);
+      setWasSelected(false);
+      setIsClosing(false);
     }
   });
 
@@ -695,8 +722,8 @@ export default function RecordMesh({
         <RecordSleeve record={record} onClick={onClick} onHover={onHover} />
       </Suspense>
 
-      {/* Vinyl disc - only render once sleeve is in final position (stage 3) */}
-      {isSelected && animationStage === 3 && (
+      {/* Vinyl disc - render during vinyl out (stage 3) and closing animation (stage 4) */}
+      {(animationStage === 3 || animationStage === 4) && (
         <group
           position={[vinylSlide, 0, -0.02]}
           rotation={[0, 0, 0]}

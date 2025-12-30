@@ -4,6 +4,7 @@ import sharp from "sharp";
 
 export interface Record {
   id: number;
+  releaseId: number;
   title: string;
   artist: string;
   year: number;
@@ -11,6 +12,7 @@ export interface Record {
   localCover: string;
   isLabelImage?: boolean;
   genre?: string;
+  discogsUrl?: string;
 }
 
 interface DiscogsRelease {
@@ -208,6 +210,7 @@ export async function fetchDiscogsCollection(forceRefresh = false): Promise<Reco
 
       allRecords.push({
         id: release.instance_id,
+        releaseId: info.id,
         title: info.title,
         artist: info.artists.map((a) => a.name).join(", "),
         year: info.year,
@@ -215,6 +218,7 @@ export async function fetchDiscogsCollection(forceRefresh = false): Promise<Reco
         localCover: `/records/covers/${filename}`,
         isLabelImage: isLabel,
         genre: info.genres?.[0] || info.styles?.[0] || "Unknown",
+        discogsUrl: `https://www.discogs.com/release/${info.id}`,
       });
     }
 
@@ -253,6 +257,7 @@ function getMockRecords(): Record[] {
 
   return mockAlbums.map((album, index) => ({
     id: index + 1,
+    releaseId: index + 1000,
     title: album.title,
     artist: album.artist,
     year: album.year,
@@ -260,5 +265,6 @@ function getMockRecords(): Record[] {
     localCover: `https://placehold.co/600x600/1a1a1a/ffffff?text=${encodeURIComponent(album.title.slice(0, 10))}`,
     isLabelImage: false,
     genre: "Electronic",
+    discogsUrl: `https://www.discogs.com/release/${index + 1000}`,
   }));
 }
