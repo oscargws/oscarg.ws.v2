@@ -53,11 +53,15 @@ export function GenreDivider({
   position,
   spacing,
   leanAngle,
+  scrollOffset,
+  isMobile = false,
 }: {
   genre: string;
   position: number;
   spacing: number;
   leanAngle: number;
+  scrollOffset: number;
+  isMobile?: boolean;
 }) {
   const baseY = position * spacing;
   const tabWidth = 0.5;
@@ -66,6 +70,25 @@ export function GenreDivider({
 
   const genreColor = getGenreColor(genre);
   const stickerRadius = 0.035;
+
+  // Wave/dip effect - same as records
+  let waveEffect = 0;
+  let scaleEffect = 1;
+  const waveCenterOffset = 0.5;
+  const distanceFromCenter = Math.abs(baseY - (scrollOffset + waveCenterOffset));
+  const waveWidth = 0.8;
+
+  if (isMobile) {
+    const waveHeight = 0.4;
+    waveEffect = Math.max(0, waveHeight * Math.exp(-(distanceFromCenter * distanceFromCenter) / (2 * waveWidth * waveWidth)));
+  } else {
+    const dipDepth = 0.8;
+    const scaleBoost = 0.15;
+    const desktopWaveWidth = 1.5;
+    const proximity = Math.exp(-(distanceFromCenter * distanceFromCenter) / (2 * desktopWaveWidth * desktopWaveWidth));
+    waveEffect = -dipDepth * proximity;
+    scaleEffect = 1 + scaleBoost * proximity;
+  }
 
   // Create tab geometry with only top corners rounded
   const tabGeometry = useMemo(() => {
@@ -82,8 +105,9 @@ export function GenreDivider({
 
   return (
     <group
-      position={[0, baseY, 0]}
+      position={[0, baseY + waveEffect, 0]}
       rotation={[leanAngle, 0, 0]}
+      scale={scaleEffect}
     >
       {/* Main card - same size as record sleeve */}
       <mesh>
@@ -565,18 +589,57 @@ function VinylDisc({ spinning, labelUrl }: { spinning: boolean; labelUrl?: strin
     }
   });
 
+  // Generate groove rings
+  const grooveRings = useMemo(() => {
+    const rings = [];
+    const innerRadius = 0.35; // Start after label
+    const outerRadius = VINYL_RADIUS - 0.02;
+    const numGrooves = 40; // Number of visible groove rings
+    const step = (outerRadius - innerRadius) / numGrooves;
+
+    for (let i = 0; i < numGrooves; i++) {
+      const r1 = innerRadius + i * step;
+      const r2 = r1 + step * 0.6; // Groove width
+      rings.push({ inner: r1, outer: r2, key: i });
+    }
+    return rings;
+  }, []);
+
   return (
     <group ref={discRef} rotation={[0, 0, rotation]}>
-      {/* Main disc - faces camera */}
+      {/* Main disc base - glossy black vinyl */}
       <mesh>
         <circleGeometry args={[VINYL_RADIUS, 64]} />
-        <meshStandardMaterial color="#1a1a1a" roughness={0.4} metalness={0.3} side={THREE.DoubleSide} />
+        <meshStandardMaterial
+          color="#0a0a0a"
+          roughness={0.15}
+          metalness={0.8}
+          side={THREE.DoubleSide}
+        />
       </mesh>
 
-      {/* Grooves - concentric rings */}
+      {/* Grooves - multiple concentric rings for realistic look */}
+      {grooveRings.map((ring) => (
+        <mesh key={ring.key} position={[0, 0, 0.0005]}>
+          <ringGeometry args={[ring.inner, ring.outer, 64]} />
+          <meshStandardMaterial
+            color="#151515"
+            roughness={0.3}
+            metalness={0.6}
+          />
+        </mesh>
+      ))}
+
+      {/* Outer edge highlight */}
       <mesh position={[0, 0, 0.001]}>
-        <ringGeometry args={[0.35, VINYL_RADIUS - 0.02, 64]} />
-        <meshStandardMaterial color="#2a2a2a" roughness={0.2} metalness={0.5} />
+        <ringGeometry args={[VINYL_RADIUS - 0.015, VINYL_RADIUS, 64]} />
+        <meshStandardMaterial color="#222222" roughness={0.1} metalness={0.9} />
+      </mesh>
+
+      {/* Inner groove area highlight - the "sheen" ring */}
+      <mesh position={[0, 0, 0.0008]}>
+        <ringGeometry args={[0.34, 0.36, 64]} />
+        <meshStandardMaterial color="#1a1a1a" roughness={0.05} metalness={0.95} />
       </mesh>
 
       {/* Label - either textured from Discogs or generic */}
@@ -618,6 +681,7 @@ export default function RecordMesh({
   const xOffset = useMemo(() => (seededRandom(record.id) - 0.5) * 0.03, [record.id]);
   const [currentPos, setCurrentPos] = useState({ x: xOffset, y: baseY, z: -2 });
   const [currentRot, setCurrentRot] = useState({ x: leanAngle, y: 0, z: 0 });
+  const [currentScale, setCurrentScale] = useState(1);
   const [vinylSlide, setVinylSlide] = useState(0);
 
   // Staged animation:
@@ -671,18 +735,29 @@ export default function RecordMesh({
   const hoverDistance = 1.3;
   let targetPos: { x: number; y: number; z: number };
   let targetRot: { x: number; y: number; z: number };
+  let targetScale: number;
   let targetVinylSlide: number;
 
-  // Wave effect - mobile only, records near center of view lift UP (creates bump/hill)
+  // Wave/dip effect based on distance from camera view center
   // Calculate directly so it updates every frame as scrollOffset changes
   let waveEffect = 0;
+  let scaleEffect = 1;
+  const waveCenterOffset = 0.5; // Offset from scroll position to center of visible area
+  const distanceFromCenter = Math.abs(baseY - (scrollOffset + waveCenterOffset));
+  const waveWidth = 0.8; // How wide the effect spreads (in spacing units)
+
   if (isMobile) {
-    const waveCenterOffset = 0.5; // Offset from scroll position to center of visible area
-    const distanceFromCenter = Math.abs(baseY - (scrollOffset + waveCenterOffset));
-    const waveWidth = 0.8; // How wide the wave effect spreads (in spacing units)
     const waveHeight = 0.4; // Max lift height
-    // Gaussian-like falloff for smooth wave
+    // Gaussian-like falloff for smooth wave - lifts UP on mobile
     waveEffect = Math.max(0, waveHeight * Math.exp(-(distanceFromCenter * distanceFromCenter) / (2 * waveWidth * waveWidth)));
+  } else {
+    // Desktop: dip DOWN and scale UP for records near camera
+    const dipDepth = 0.8; // How much to dip down
+    const scaleBoost = 0.15; // How much to scale up (15%)
+    const desktopWaveWidth = 1.5; // Wider spread for desktop
+    const proximity = Math.exp(-(distanceFromCenter * distanceFromCenter) / (2 * desktopWaveWidth * desktopWaveWidth));
+    waveEffect = -dipDepth * proximity; // Negative = dip down
+    scaleEffect = 1 + scaleBoost * proximity;
   }
 
   if (animationStage === 0) {
@@ -694,6 +769,7 @@ export default function RecordMesh({
       z: showHover ? hoverDistance : 0,
     };
     targetRot = { x: leanAngle, y: 0, z: 0 };
+    targetScale = scaleEffect;
     targetVinylSlide = 0;
   } else if (animationStage === 1) {
     // Stage 1: Lift along lean angle - moves perpendicular to record face to avoid clipping
@@ -707,26 +783,31 @@ export default function RecordMesh({
       z: liftZ,
     };
     targetRot = { x: leanAngle, y: 0, z: 0 };
+    targetScale = 1;
     targetVinylSlide = 0;
   } else if (animationStage === 2) {
     // Stage 2: Move to center (on mobile, this is the final selected state)
     targetPos = isMobile ? centerPos : centerPos;
     targetRot = { x: cameraRotX, y: 0, z: 0 };
+    targetScale = 1;
     targetVinylSlide = 0;
   } else if (animationStage === 3) {
     // Stage 3: Slide left (desktop only)
     targetPos = selectedPos;
     targetRot = { x: cameraRotX, y: 0, z: 0 };
+    targetScale = 1;
     targetVinylSlide = 0;
   } else if (animationStage === 4) {
     // Stage 4: Vinyl slides out (desktop only)
     targetPos = selectedPos;
     targetRot = { x: cameraRotX, y: 0, z: 0 };
+    targetScale = 1;
     targetVinylSlide = 2.0;
   } else if (animationStage === 5) {
     // Stage 5: Vinyl slides back in (desktop only)
     targetPos = selectedPos;
     targetRot = { x: cameraRotX, y: 0, z: 0 };
+    targetScale = 1;
     targetVinylSlide = 0;
   } else if (animationStage === 6) {
     // Stage 6: Lift position before returning to stack (reverse of stage 1)
@@ -739,6 +820,7 @@ export default function RecordMesh({
       z: liftZ,
     };
     targetRot = { x: leanAngle, y: 0, z: 0 };
+    targetScale = 1;
     targetVinylSlide = 0;
   } else {
     // Stage 7: Return to stack
@@ -748,6 +830,7 @@ export default function RecordMesh({
       z: 0,
     };
     targetRot = { x: leanAngle, y: 0, z: 0 };
+    targetScale = scaleEffect;
     targetVinylSlide = 0;
   }
 
@@ -772,6 +855,9 @@ export default function RecordMesh({
 
     // Animate vinyl
     setVinylSlide((prev) => THREE.MathUtils.lerp(prev, targetVinylSlide, delta * speed));
+
+    // Animate scale
+    setCurrentScale((prev) => THREE.MathUtils.lerp(prev, targetScale, delta * speed));
 
     // Check if current stage animation is complete, then advance
     const posDistance = Math.abs(newPos.x - targetPos.x) +
@@ -810,6 +896,7 @@ export default function RecordMesh({
       ref={groupRef}
       position={[currentPos.x, currentPos.y, currentPos.z]}
       rotation={[currentRot.x, currentRot.y, currentRot.z]}
+      scale={currentScale}
     >
       {/* Sleeve */}
       <Suspense fallback={<FallbackSleeve />}>

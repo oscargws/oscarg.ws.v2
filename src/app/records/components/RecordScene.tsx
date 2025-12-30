@@ -268,10 +268,14 @@ export default function RecordScene({ records }: RecordSceneProps) {
         <color attach="background" args={["#faf8f5"]} />
 
         {/* Lighting */}
-        <ambientLight intensity={0.8} />
-        <directionalLight position={[5, 5, 10]} intensity={0.5} />
+        <ambientLight intensity={1.0} />
+        <directionalLight position={[5, 5, 10]} intensity={0.6} />
         {/* Front light for selected vinyl */}
         <pointLight position={[0, 2, 8]} intensity={1.5} distance={15} />
+        {/* Right side light for vinyl when pulled out */}
+        <pointLight position={[3, 2, 6]} intensity={2.0} distance={12} />
+        {/* Top spotlight for vinyl sheen */}
+        <spotLight position={[1, 5, 5]} intensity={1.5} angle={0.5} penumbra={0.5} />
 
         {/* Records group - vertical column, pan with scroll */}
         <group position={[0, -cameraY, 0]}>
@@ -293,6 +297,8 @@ export default function RecordScene({ records }: RecordSceneProps) {
                   position={item.position}
                   spacing={recordSpacing}
                   leanAngle={leanAngle}
+                  scrollOffset={cameraY}
+                  isMobile={isMobile}
                 />
               );
             } else {
