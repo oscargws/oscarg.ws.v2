@@ -90,11 +90,12 @@ export default function RecordScene({ records }: RecordSceneProps) {
   }, [records]);
 
   // Debug controls (desktop values)
-  const { camX: desktopCamX, camY: desktopCamY, camZ: desktopCamZ, camRotX: desktopCamRotX, fov: desktopFov } = useControls("Camera", {
+  const { camX: desktopCamX, camY: desktopCamY, camZ: desktopCamZ, camRotX: desktopCamRotX, camRotY: desktopCamRotY, fov: desktopFov } = useControls("Camera", {
     camX: { value: 0, min: -10, max: 10, step: 0.1 },
     camY: { value: 1, min: -5, max: 10, step: 0.1 },
     camZ: { value: 4.9, min: 1, max: 20, step: 0.1 },
     camRotX: { value: 0.87, min: -Math.PI, max: Math.PI, step: 0.01 },
+    camRotY: { value: 0, min: -Math.PI, max: Math.PI, step: 0.01 },
     fov: { value: 32, min: 20, max: 120, step: 1 },
   });
 
@@ -108,6 +109,7 @@ export default function RecordScene({ records }: RecordSceneProps) {
   const camY = isMobile ? 2.5 : desktopCamY;
   const camZ = isMobile ? 5.3 : desktopCamZ;
   const camRotX = isMobile ? 0.73 : desktopCamRotX;
+  const camRotY = isMobile ? 0 : desktopCamRotY;
   const fov = isMobile ? 45 : desktopFov;
   const spacing = isMobile ? 0.19 : desktopSpacing;
   const leanAngle = isMobile ? 1.2 : desktopLeanAngle;
@@ -258,7 +260,7 @@ export default function RecordScene({ records }: RecordSceneProps) {
         <PerspectiveCamera
           makeDefault
           position={[camX, camY, camZ]}
-          rotation={[camRotX, 0, 0]}
+          rotation={[camRotX, camRotY, 0]}
           fov={fov}
           near={0.1}
           far={200}

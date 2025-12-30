@@ -650,18 +650,18 @@ export default function RecordMesh({
   // Handle selection state changes
   useFrame(() => {
     if (isSelected && !wasSelected) {
-      // Just became selected - start opening animation sequence
-      setAnimationStage(1);
+      // Just became selected - start opening animation sequence with lift
+      setAnimationStage(1); // Start with lift stage
       setWasSelected(true);
       setIsClosing(false);
     } else if (!isSelected && wasSelected && !isClosing) {
       // Just became deselected - start closing animation sequence
       if (isMobile) {
-        // On mobile, go directly back to stack (no vinyl animation)
-        setAnimationStage(5);
+        // On mobile, go to lift position first (no vinyl animation)
+        setAnimationStage(6);
       } else {
         // On desktop, start with vinyl going back in
-        setAnimationStage(4);
+        setAnimationStage(5);
       }
       setIsClosing(true);
     }
@@ -696,27 +696,52 @@ export default function RecordMesh({
     targetRot = { x: leanAngle, y: 0, z: 0 };
     targetVinylSlide = 0;
   } else if (animationStage === 1) {
-    // Stage 1: Move to center (on mobile, this is the final selected state)
+    // Stage 1: Lift along lean angle - moves perpendicular to record face to avoid clipping
+    const liftDistance = 2.0; // Distance to lift along lean direction
+    // Lift perpendicular to the leaning record (up and back along lean angle)
+    const liftY = liftDistance * Math.cos(leanAngle);
+    const liftZ = liftDistance * Math.sin(leanAngle);
+    targetPos = {
+      x: xOffset,
+      y: baseY + liftY,
+      z: liftZ,
+    };
+    targetRot = { x: leanAngle, y: 0, z: 0 };
+    targetVinylSlide = 0;
+  } else if (animationStage === 2) {
+    // Stage 2: Move to center (on mobile, this is the final selected state)
     targetPos = isMobile ? centerPos : centerPos;
     targetRot = { x: cameraRotX, y: 0, z: 0 };
     targetVinylSlide = 0;
-  } else if (animationStage === 2) {
-    // Stage 2: Slide left (desktop only)
+  } else if (animationStage === 3) {
+    // Stage 3: Slide left (desktop only)
     targetPos = selectedPos;
     targetRot = { x: cameraRotX, y: 0, z: 0 };
     targetVinylSlide = 0;
-  } else if (animationStage === 3) {
-    // Stage 3: Vinyl slides out (desktop only)
+  } else if (animationStage === 4) {
+    // Stage 4: Vinyl slides out (desktop only)
     targetPos = selectedPos;
     targetRot = { x: cameraRotX, y: 0, z: 0 };
     targetVinylSlide = 2.0;
-  } else if (animationStage === 4) {
-    // Stage 4: Vinyl slides back in (desktop only)
+  } else if (animationStage === 5) {
+    // Stage 5: Vinyl slides back in (desktop only)
     targetPos = selectedPos;
     targetRot = { x: cameraRotX, y: 0, z: 0 };
     targetVinylSlide = 0;
+  } else if (animationStage === 6) {
+    // Stage 6: Lift position before returning to stack (reverse of stage 1)
+    const liftDistance = 2.0;
+    const liftY = liftDistance * Math.cos(leanAngle);
+    const liftZ = liftDistance * Math.sin(leanAngle);
+    targetPos = {
+      x: xOffset,
+      y: baseY + liftY,
+      z: liftZ,
+    };
+    targetRot = { x: leanAngle, y: 0, z: 0 };
+    targetVinylSlide = 0;
   } else {
-    // Stage 5: Return to stack
+    // Stage 7: Return to stack
     targetPos = {
       x: xOffset,
       y: baseY,
@@ -756,17 +781,24 @@ export default function RecordMesh({
 
     // Opening animation stages
     if (animationStage === 1 && posDistance < threshold) {
-      // On mobile, stay at stage 1 (centered). On desktop, continue to stage 2
-      if (!isMobile) {
-        setAnimationStage(2);
-      }
+      // Lift complete, move to center
+      setAnimationStage(2);
     } else if (animationStage === 2 && posDistance < threshold) {
-      setAnimationStage(3);
+      // On mobile, stay at stage 2 (centered). On desktop, continue to stage 3
+      if (!isMobile) {
+        setAnimationStage(3);
+      }
+    } else if (animationStage === 3 && posDistance < threshold) {
+      setAnimationStage(4);
     }
     // Closing animation stages
-    else if (animationStage === 4 && vinylDistance < threshold) {
-      setAnimationStage(5);
-    } else if (animationStage === 5 && posDistance < threshold) {
+    else if (animationStage === 5 && vinylDistance < threshold) {
+      // Vinyl back in, now go to lift position
+      setAnimationStage(6);
+    } else if (animationStage === 6 && posDistance < threshold) {
+      // At lift position, now return to stack
+      setAnimationStage(7);
+    } else if (animationStage === 7 && posDistance < threshold) {
       setAnimationStage(0);
       setWasSelected(false);
       setIsClosing(false);
@@ -784,8 +816,8 @@ export default function RecordMesh({
         <RecordSleeve record={record} onClick={onClick} onHover={onHover} />
       </Suspense>
 
-      {/* Vinyl disc - render during vinyl out (stage 3) and closing animation (stage 4) - desktop only */}
-      {!isMobile && (animationStage === 3 || animationStage === 4) && (
+      {/* Vinyl disc - render during vinyl out (stage 4) and closing animation (stage 5) - desktop only */}
+      {!isMobile && (animationStage === 4 || animationStage === 5) && (
         <group
           position={[vinylSlide, 0, -0.02]}
           rotation={[0, 0, 0]}
