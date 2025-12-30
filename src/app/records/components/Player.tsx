@@ -31,9 +31,9 @@ export default function Player({ record, onClose }: PlayerProps) {
     <div
       className={`
         fixed bottom-6 left-1/2 z-50
-        bg-zinc-900 rounded-2xl overflow-hidden
-        shadow-2xl
-        transition-all duration-400 ease-out
+        bg-black rounded-2xl overflow-hidden
+        shadow-2xl border border-zinc-800
+        transition-all duration-300 ease-out
         ${isVisible
           ? "opacity-100 -translate-x-1/2 translate-y-0"
           : "opacity-0 -translate-x-1/2 translate-y-4"
@@ -44,10 +44,10 @@ export default function Player({ record, onClose }: PlayerProps) {
       <div className="p-3 px-5 flex items-center gap-4">
         {/* Track info */}
         <div className="flex-1 min-w-0">
-          <h3 className="text-white font-medium text-sm truncate">
+          <p className="text-white text-sm truncate">
             {currentRecord.artist}
-          </h3>
-          <p className="text-zinc-400 text-xs truncate">
+          </p>
+          <p className="text-neutral-400 text-sm truncate">
             {currentRecord.title} {currentRecord.year > 0 && `(${currentRecord.year})`}
           </p>
         </div>
@@ -58,7 +58,7 @@ export default function Player({ record, onClose }: PlayerProps) {
             href={currentRecord.discogsUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-zinc-500 hover:text-white transition-colors p-2"
+            className="text-neutral-400 hover:text-white transition-colors p-2"
             title="View on Discogs"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -70,7 +70,7 @@ export default function Player({ record, onClose }: PlayerProps) {
         {/* Close button */}
         <button
           onClick={onClose}
-          className="text-zinc-500 hover:text-white transition-colors p-2 cursor-pointer"
+          className="text-neutral-400 hover:text-white transition-colors p-2 cursor-pointer"
           title="Close"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

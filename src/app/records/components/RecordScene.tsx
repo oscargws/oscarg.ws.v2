@@ -1,41 +1,13 @@
 "use client";
 
-import { Canvas, useThree, useFrame } from "@react-three/fiber";
-import { useRef, useState, useCallback, useMemo } from "react";
+import { Canvas } from "@react-three/fiber";
+import { useRef, useState, useCallback, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { useControls, Leva } from "leva";
 import { PerspectiveCamera } from "@react-three/drei";
-import * as THREE from "three";
 import { Record as RecordType } from "../lib/discogs";
 import RecordMesh, { GenreDivider } from "./Record";
 import Player from "./Player";
-
-// Backdrop that appears between stack and selected record
-function Backdrop({ visible }: { visible: boolean }) {
-  const { camera } = useThree();
-  const materialRef = useRef<THREE.MeshBasicMaterial>(null);
-  const [opacity, setOpacity] = useState(0);
-
-  useFrame((_, delta) => {
-    const targetOpacity = visible ? 0.5 : 0;
-    setOpacity((prev) => THREE.MathUtils.lerp(prev, targetOpacity, delta * 4));
-
-    if (materialRef.current) {
-      materialRef.current.opacity = opacity;
-    }
-  });
-
-  // Always render but control visibility via opacity
-  if (opacity < 0.01 && !visible) return null;
-
-  // Position backdrop in front of the stack (z~0) but behind the selected record (z~3)
-  return (
-    <mesh position={[camera.position.x, camera.position.y, 1.5]}>
-      <planeGeometry args={[100, 100]} />
-      <meshBasicMaterial ref={materialRef} color="#000000" opacity={opacity} transparent side={THREE.DoubleSide} />
-    </mesh>
-  );
-}
 
 interface RecordSceneProps {
   records: RecordType[];
@@ -48,6 +20,17 @@ export default function RecordScene({ records }: RecordSceneProps) {
   const [hasScrolled, setHasScrolled] = useState(false);
   const scrollDistanceRef = useRef(0);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [isMobile, setIsMobile] = useState(false);
+  const touchStartRef = useRef<number | null>(null);
+  const lastTouchYRef = useRef<number>(0);
+
+  // Detect mobile/small screens
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   // Sort records by genre so they're grouped together
   const sortedRecords = useMemo(() => {
@@ -58,8 +41,8 @@ export default function RecordScene({ records }: RecordSceneProps) {
     });
   }, [records]);
 
-  // Debug controls
-  const { camX, camY, camZ, camRotX, fov } = useControls("Camera", {
+  // Debug controls (desktop values)
+  const { camX: desktopCamX, camY: desktopCamY, camZ: desktopCamZ, camRotX: desktopCamRotX, fov: desktopFov } = useControls("Camera", {
     camX: { value: 0, min: -10, max: 10, step: 0.1 },
     camY: { value: 1, min: -5, max: 10, step: 0.1 },
     camZ: { value: 4.9, min: 1, max: 20, step: 0.1 },
@@ -67,10 +50,19 @@ export default function RecordScene({ records }: RecordSceneProps) {
     fov: { value: 32, min: 20, max: 120, step: 1 },
   });
 
-  const { spacing, leanAngle } = useControls("Records", {
+  const { spacing: desktopSpacing, leanAngle: desktopLeanAngle } = useControls("Records", {
     spacing: { value: 0.19, min: 0.05, max: 0.5, step: 0.01 },
     leanAngle: { value: 1.2, min: 0, max: Math.PI / 2, step: 0.01 },
   });
+
+  // Mobile-specific camera and record values
+  const camX = isMobile ? 0 : desktopCamX;
+  const camY = isMobile ? 2.5 : desktopCamY;
+  const camZ = isMobile ? 5.3 : desktopCamZ;
+  const camRotX = isMobile ? 0.73 : desktopCamRotX;
+  const fov = isMobile ? 45 : desktopFov;
+  const spacing = isMobile ? 0.19 : desktopSpacing;
+  const leanAngle = isMobile ? 1.2 : desktopLeanAngle;
 
   // Data controls - informational
   useControls("Data", {
@@ -133,6 +125,35 @@ export default function RecordScene({ records }: RecordSceneProps) {
     [minY, maxY, selectedRecord, hasScrolled]
   );
 
+  // Touch handlers for mobile drag scrolling
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    if (selectedRecord) return;
+    touchStartRef.current = e.touches[0].clientY;
+    lastTouchYRef.current = e.touches[0].clientY;
+  }, [selectedRecord]);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (selectedRecord || touchStartRef.current === null) return;
+
+    const currentY = e.touches[0].clientY;
+    const deltaY = lastTouchYRef.current - currentY;
+    lastTouchYRef.current = currentY;
+
+    setCameraY((prev) => Math.max(minY, Math.min(maxY, prev + deltaY * 0.02)));
+
+    // Track scroll distance for hiding hint
+    if (!hasScrolled) {
+      scrollDistanceRef.current += Math.abs(deltaY);
+      if (scrollDistanceRef.current >= 50) {
+        setHasScrolled(true);
+      }
+    }
+  }, [minY, maxY, selectedRecord, hasScrolled]);
+
+  const handleTouchEnd = useCallback(() => {
+    touchStartRef.current = null;
+  }, []);
+
   const handleRecordClick = useCallback(
     (record: RecordType) => {
       if (selectedRecord?.id === record.id) {
@@ -155,6 +176,9 @@ export default function RecordScene({ records }: RecordSceneProps) {
       ref={containerRef}
       className="w-full h-full"
       onWheel={handleWheel}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
       style={{ touchAction: "none" }}
     >
       <Leva hidden={process.env.NODE_ENV === "production"} />
@@ -218,6 +242,7 @@ export default function RecordScene({ records }: RecordSceneProps) {
                   spacing={recordSpacing}
                   leanAngle={leanAngle}
                   scrollOffset={cameraY}
+                  isMobile={isMobile}
                 />
               );
             }
@@ -243,7 +268,7 @@ export default function RecordScene({ records }: RecordSceneProps) {
       {/* Scroll hint */}
       {!selectedRecord && !hasScrolled && (
         <div className="absolute bottom-6 left-1/2 -translate-x-1/2 text-zinc-400 text-sm animate-pulse">
-          Scroll to browse
+          {isMobile ? "Swipe to browse" : "Scroll to browse"}
         </div>
       )}
 
@@ -264,6 +289,18 @@ export default function RecordScene({ records }: RecordSceneProps) {
             </a>
           </p>
         </div>
+      )}
+
+      {/* Built by credit - desktop only */}
+      {!isMobile && (
+        <a
+          href="https://x.com/oscargws_"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="absolute bottom-4 right-4 text-neutral-400 text-xs hover:text-neutral-600 transition-colors"
+        >
+          built by @oscargws
+        </a>
       )}
     </div>
   );

@@ -16,6 +16,7 @@ interface RecordMeshProps {
   spacing: number;
   leanAngle: number;
   scrollOffset: number;
+  isMobile?: boolean;
 }
 
 // Sleeve dimensions
@@ -81,7 +82,6 @@ export function GenreDivider({
 
 // Vinyl dimensions
 const VINYL_RADIUS = 0.9;
-const VINYL_THICKNESS = 0.008;
 
 // Sleeve with album art texture
 function TexturedSleeve({
@@ -568,6 +568,7 @@ export default function RecordMesh({
   spacing,
   leanAngle,
   scrollOffset,
+  isMobile = false,
 }: RecordMeshProps) {
   const groupRef = useRef<THREE.Group>(null);
   const { camera } = useThree();
@@ -615,8 +616,14 @@ export default function RecordMesh({
       setWasSelected(true);
       setIsClosing(false);
     } else if (!isSelected && wasSelected && !isClosing) {
-      // Just became deselected - start closing animation sequence (only once)
-      setAnimationStage(4); // Start with vinyl going back in
+      // Just became deselected - start closing animation sequence
+      if (isMobile) {
+        // On mobile, go directly back to stack (no vinyl animation)
+        setAnimationStage(5);
+      } else {
+        // On desktop, start with vinyl going back in
+        setAnimationStage(4);
+      }
       setIsClosing(true);
     }
   });
@@ -627,32 +634,44 @@ export default function RecordMesh({
   let targetRot: { x: number; y: number; z: number };
   let targetVinylSlide: number;
 
+  // Wave effect - mobile only, records near center of view lift UP (creates bump/hill)
+  // Calculate directly so it updates every frame as scrollOffset changes
+  let waveEffect = 0;
+  if (isMobile) {
+    const waveCenterOffset = 0.5; // Offset from scroll position to center of visible area
+    const distanceFromCenter = Math.abs(baseY - (scrollOffset + waveCenterOffset));
+    const waveWidth = 0.8; // How wide the wave effect spreads (in spacing units)
+    const waveHeight = 0.4; // Max lift height
+    // Gaussian-like falloff for smooth wave
+    waveEffect = Math.max(0, waveHeight * Math.exp(-(distanceFromCenter * distanceFromCenter) / (2 * waveWidth * waveWidth)));
+  }
+
   if (animationStage === 0) {
-    // Idle in stack - stack position or hover
+    // Idle in stack - stack position with wave effect (lifts records UP), or hover
     targetPos = {
       x: xOffset,
-      y: baseY + (isHovered ? hoverDistance * 0.3 : 0),
+      y: baseY + waveEffect + (isHovered ? hoverDistance * 0.3 : 0),
       z: isHovered ? hoverDistance : 0,
     };
     targetRot = { x: leanAngle, y: 0, z: 0 };
     targetVinylSlide = 0;
   } else if (animationStage === 1) {
-    // Stage 1: Move to center
-    targetPos = centerPos;
+    // Stage 1: Move to center (on mobile, this is the final selected state)
+    targetPos = isMobile ? centerPos : centerPos;
     targetRot = { x: cameraRotX, y: 0, z: 0 };
     targetVinylSlide = 0;
   } else if (animationStage === 2) {
-    // Stage 2: Slide left
+    // Stage 2: Slide left (desktop only)
     targetPos = selectedPos;
     targetRot = { x: cameraRotX, y: 0, z: 0 };
     targetVinylSlide = 0;
   } else if (animationStage === 3) {
-    // Stage 3: Vinyl slides out
+    // Stage 3: Vinyl slides out (desktop only)
     targetPos = selectedPos;
     targetRot = { x: cameraRotX, y: 0, z: 0 };
     targetVinylSlide = 2.0;
   } else if (animationStage === 4) {
-    // Stage 4: Vinyl slides back in
+    // Stage 4: Vinyl slides back in (desktop only)
     targetPos = selectedPos;
     targetRot = { x: cameraRotX, y: 0, z: 0 };
     targetVinylSlide = 0;
@@ -697,7 +716,10 @@ export default function RecordMesh({
 
     // Opening animation stages
     if (animationStage === 1 && posDistance < threshold) {
-      setAnimationStage(2);
+      // On mobile, stay at stage 1 (centered). On desktop, continue to stage 2
+      if (!isMobile) {
+        setAnimationStage(2);
+      }
     } else if (animationStage === 2 && posDistance < threshold) {
       setAnimationStage(3);
     }
@@ -722,8 +744,8 @@ export default function RecordMesh({
         <RecordSleeve record={record} onClick={onClick} onHover={onHover} />
       </Suspense>
 
-      {/* Vinyl disc - render during vinyl out (stage 3) and closing animation (stage 4) */}
-      {(animationStage === 3 || animationStage === 4) && (
+      {/* Vinyl disc - render during vinyl out (stage 3) and closing animation (stage 4) - desktop only */}
+      {!isMobile && (animationStage === 3 || animationStage === 4) && (
         <group
           position={[vinylSlide, 0, -0.02]}
           rotation={[0, 0, 0]}
