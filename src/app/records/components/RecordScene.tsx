@@ -371,12 +371,12 @@ export default function RecordScene({ records }: RecordSceneProps) {
           <br/>
           Follow me on X at{" "}
           <a
-            href="https://x.com/oscargws_"
+            href="https://x.com/oscargws"
             target="_blank"
             rel="noopener noreferrer"
             className="text-zinc-900 hover:underline"
           >
-            @oscargws_
+            @oscargws
           </a>
         </p>
       </div>
@@ -384,7 +384,7 @@ export default function RecordScene({ records }: RecordSceneProps) {
       {/* Built by credit - desktop only */}
       {!isMobile && (
         <a
-          href="https://x.com/oscargws_"
+          href="https://x.com/oscargws"
           target="_blank"
           rel="noopener noreferrer"
           className="absolute bottom-4 right-4 text-neutral-400 text-xs hover:text-neutral-600 transition-colors"
