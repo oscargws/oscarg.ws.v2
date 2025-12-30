@@ -26,7 +26,8 @@ const SLEEVE_DEPTH = 0.015;
 const VINYL_RADIUS = 0.9;
 const VINYL_THICKNESS = 0.008;
 
-function RecordSleeve({
+// Sleeve with album art texture
+function TexturedSleeve({
   record,
   onClick,
   onHover,
@@ -87,6 +88,107 @@ function RecordSleeve({
   );
 }
 
+// Genre to sticker color mapping
+const GENRE_COLORS: { [key: string]: string } = {
+  "Electronic": "#00ff88",
+  "House": "#00ff88",
+  "Techno": "#ff00ff",
+  "Ambient": "#00ccff",
+  "Drum n Bass": "#ffff00",
+  "Jungle": "#ffff00",
+  "Hip Hop": "#ff6600",
+  "Rap": "#ff6600",
+  "Rock": "#ff0000",
+  "Pop": "#ff69b4",
+  "Jazz": "#9966ff",
+  "Soul": "#ffcc00",
+  "Funk": "#ffcc00",
+  "Disco": "#ff1493",
+  "Reggae": "#00ff00",
+  "Dub": "#00ff00",
+  "Classical": "#ffffff",
+  "Experimental": "#888888",
+  "Industrial": "#444444",
+  "Unknown": "#666666",
+};
+
+function getGenreColor(genre: string | undefined): string {
+  if (!genre) return GENRE_COLORS["Unknown"];
+
+  // Check for exact match first
+  if (GENRE_COLORS[genre]) return GENRE_COLORS[genre];
+
+  // Check for partial match
+  const lowerGenre = genre.toLowerCase();
+  for (const [key, color] of Object.entries(GENRE_COLORS)) {
+    if (lowerGenre.includes(key.toLowerCase()) || key.toLowerCase().includes(lowerGenre)) {
+      return color;
+    }
+  }
+
+  return GENRE_COLORS["Unknown"];
+}
+
+// Plain black sleeve for records that only have label images
+function PlainSleeve({
+  genre,
+  onClick,
+  onHover,
+}: {
+  genre?: string;
+  onClick: () => void;
+  onHover: (hovered: boolean) => void;
+}) {
+  const stickerColor = getGenreColor(genre);
+
+  return (
+    <group>
+      <mesh
+        onClick={(e) => {
+          e.stopPropagation();
+          onClick();
+        }}
+        onPointerEnter={(e) => {
+          e.stopPropagation();
+          onHover(true);
+          document.body.style.cursor = "pointer";
+        }}
+        onPointerLeave={() => {
+          onHover(false);
+          document.body.style.cursor = "auto";
+        }}
+        castShadow
+        receiveShadow
+      >
+        <boxGeometry args={[SLEEVE_SIZE, SLEEVE_SIZE, SLEEVE_DEPTH]} />
+        <meshStandardMaterial color="#1a1a1a" roughness={0.9} />
+      </mesh>
+
+      {/* Genre sticker - top left corner */}
+      <mesh position={[-SLEEVE_SIZE / 2 + 0.25, SLEEVE_SIZE / 2 - 0.25, SLEEVE_DEPTH / 2 + 0.001]}>
+        <circleGeometry args={[0.15, 32]} />
+        <meshStandardMaterial color={stickerColor} roughness={0.5} />
+      </mesh>
+    </group>
+  );
+}
+
+// Wrapper to choose between textured and plain sleeve
+function RecordSleeve({
+  record,
+  onClick,
+  onHover,
+}: {
+  record: RecordType;
+  onClick: () => void;
+  onHover: (hovered: boolean) => void;
+}) {
+  if (record.isLabelImage) {
+    return <PlainSleeve genre={record.genre} onClick={onClick} onHover={onHover} />;
+  }
+  return <TexturedSleeve record={record} onClick={onClick} onHover={onHover} />;
+}
+
 function FallbackSleeve() {
   return (
     <mesh>
@@ -96,7 +198,47 @@ function FallbackSleeve() {
   );
 }
 
-function VinylDisc({ spinning }: { spinning: boolean }) {
+// Generic vinyl label (beige with markings)
+function GenericLabel() {
+  return (
+    <>
+      {/* Label */}
+      <mesh position={[0, 0, 0.002]}>
+        <circleGeometry args={[0.3, 32]} />
+        <meshStandardMaterial color="#d4c4a8" roughness={0.7} />
+      </mesh>
+
+      {/* Label markings to show rotation */}
+      <mesh position={[0.15, 0, 0.003]}>
+        <circleGeometry args={[0.04, 16]} />
+        <meshStandardMaterial color="#8b4513" />
+      </mesh>
+      <mesh position={[-0.1, 0.12, 0.003]}>
+        <circleGeometry args={[0.03, 16]} />
+        <meshStandardMaterial color="#8b4513" />
+      </mesh>
+      <mesh position={[0, -0.18, 0.003]}>
+        <planeGeometry args={[0.15, 0.03]} />
+        <meshStandardMaterial color="#333" />
+      </mesh>
+    </>
+  );
+}
+
+// Custom label with texture from Discogs image
+function TexturedLabel({ labelUrl }: { labelUrl: string }) {
+  const texture = useTexture(labelUrl);
+  texture.colorSpace = THREE.SRGBColorSpace;
+
+  return (
+    <mesh position={[0, 0, 0.002]}>
+      <circleGeometry args={[0.3, 64]} />
+      <meshStandardMaterial map={texture} roughness={0.7} />
+    </mesh>
+  );
+}
+
+function VinylDisc({ spinning, labelUrl }: { spinning: boolean; labelUrl?: string }) {
   const discRef = useRef<THREE.Group>(null);
   const [rotation, setRotation] = useState(0);
 
@@ -123,25 +265,14 @@ function VinylDisc({ spinning }: { spinning: boolean }) {
         <meshStandardMaterial color="#111" roughness={0.1} metalness={0.9} />
       </mesh>
 
-      {/* Label */}
-      <mesh position={[0, 0, 0.002]}>
-        <circleGeometry args={[0.3, 32]} />
-        <meshStandardMaterial color="#d4c4a8" roughness={0.7} />
-      </mesh>
-
-      {/* Label markings to show rotation */}
-      <mesh position={[0.15, 0, 0.003]}>
-        <circleGeometry args={[0.04, 16]} />
-        <meshStandardMaterial color="#8b4513" />
-      </mesh>
-      <mesh position={[-0.1, 0.12, 0.003]}>
-        <circleGeometry args={[0.03, 16]} />
-        <meshStandardMaterial color="#8b4513" />
-      </mesh>
-      <mesh position={[0, -0.18, 0.003]}>
-        <planeGeometry args={[0.15, 0.03]} />
-        <meshStandardMaterial color="#333" />
-      </mesh>
+      {/* Label - either textured from Discogs or generic */}
+      {labelUrl ? (
+        <Suspense fallback={<GenericLabel />}>
+          <TexturedLabel labelUrl={labelUrl} />
+        </Suspense>
+      ) : (
+        <GenericLabel />
+      )}
 
       {/* Center hole */}
       <mesh position={[0, 0, 0.004]}>
@@ -187,10 +318,16 @@ export default function RecordMesh({
     z: camera.position.z - Math.cos(cameraRotX) * distanceFromCamera,
   };
 
-  // Target values
+  // Target values - when hovered, lift perpendicular to the tilted face
+  // The record is tilted back, so lift forward (Z) and slightly up (Y)
+  const hoverDistance = 1.8;
   const targetPos = isSelected
     ? selectedPos
-    : { x: 0, y: baseY, z: isHovered ? 0.3 : 0 };
+    : {
+        x: 0,
+        y: baseY + (isHovered ? hoverDistance * 0.3 : 0),
+        z: isHovered ? hoverDistance : 0,
+      };
 
   // When selected, match camera's X rotation so record faces the camera
   const targetRot = isSelected
@@ -234,7 +371,10 @@ export default function RecordMesh({
           position={[vinylSlide, 0, 0.01]}
           rotation={[0, 0, 0]}
         >
-          <VinylDisc spinning={isSelected} />
+          <VinylDisc
+            spinning={isSelected}
+            labelUrl={record.isLabelImage ? record.localCover : undefined}
+          />
         </group>
       )}
     </group>
