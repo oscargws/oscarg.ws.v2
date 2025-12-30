@@ -24,6 +24,30 @@ const SLEEVE_SIZE = 2;
 const SLEEVE_DEPTH = 0.015;
 
 // Genre divider - full card with tab at top left
+// Create a shape with only top corners rounded
+function createTopRoundedRect(width: number, height: number, radius: number) {
+  const shape = new THREE.Shape();
+  const x = -width / 2;
+  const y = -height / 2;
+
+  // Start at bottom-left (sharp corner)
+  shape.moveTo(x, y);
+  // Bottom edge to bottom-right (sharp corner)
+  shape.lineTo(x + width, y);
+  // Right edge up to top-right rounded corner
+  shape.lineTo(x + width, y + height - radius);
+  // Top-right rounded corner
+  shape.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+  // Top edge to top-left rounded corner
+  shape.lineTo(x + radius, y + height);
+  // Top-left rounded corner
+  shape.quadraticCurveTo(x, y + height, x, y + height - radius);
+  // Left edge back to start
+  shape.lineTo(x, y);
+
+  return shape;
+}
+
 export function GenreDivider({
   genre,
   position,
@@ -43,6 +67,19 @@ export function GenreDivider({
   const genreColor = getGenreColor(genre);
   const stickerRadius = 0.035;
 
+  // Create tab geometry with only top corners rounded
+  const tabGeometry = useMemo(() => {
+    const shape = createTopRoundedRect(tabWidth, tabHeight, 0.03);
+    const extrudeSettings = {
+      depth: tabDepth,
+      bevelEnabled: false,
+    };
+    const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+    // Center the geometry on Z axis
+    geometry.translate(0, 0, -tabDepth / 2);
+    return geometry;
+  }, [tabWidth, tabHeight, tabDepth]);
+
   return (
     <group
       position={[0, baseY, 0]}
@@ -55,8 +92,10 @@ export function GenreDivider({
       </mesh>
 
       {/* Tab at top left */}
-      <mesh position={[-SLEEVE_SIZE / 2 + tabWidth / 2 + 0.1, SLEEVE_SIZE / 2 + tabHeight / 2, 0]}>
-        <boxGeometry args={[tabWidth, tabHeight, tabDepth]} />
+      <mesh
+        geometry={tabGeometry}
+        position={[-SLEEVE_SIZE / 2 + tabWidth / 2 + 0.1, SLEEVE_SIZE / 2 + tabHeight / 2, 0]}
+      >
         <meshStandardMaterial color="#f5f0e6" roughness={0.95} />
       </mesh>
 
