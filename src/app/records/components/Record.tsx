@@ -647,11 +647,12 @@ export default function RecordMesh({
   }
 
   if (animationStage === 0) {
-    // Idle in stack - stack position with wave effect (lifts records UP), or hover
+    // Idle in stack - stack position with wave effect (lifts records UP), or hover (desktop only)
+    const showHover = isHovered && !isMobile;
     targetPos = {
       x: xOffset,
-      y: baseY + waveEffect + (isHovered ? hoverDistance * 0.3 : 0),
-      z: isHovered ? hoverDistance : 0,
+      y: baseY + waveEffect + (showHover ? hoverDistance * 0.3 : 0),
+      z: showHover ? hoverDistance : 0,
     };
     targetRot = { x: leanAngle, y: 0, z: 0 };
     targetVinylSlide = 0;

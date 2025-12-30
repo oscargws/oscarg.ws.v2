@@ -111,7 +111,7 @@ export default function RecordScene({ records }: RecordSceneProps) {
       if (selectedRecord) return;
 
       e.preventDefault();
-      const delta = e.deltaY * 0.01;
+      const delta = e.deltaY * -0.01;
       setCameraY((prev) => Math.max(minY, Math.min(maxY, prev + delta)));
 
       // Track scroll distance and hide hint after 50px
@@ -136,7 +136,7 @@ export default function RecordScene({ records }: RecordSceneProps) {
     if (selectedRecord || touchStartRef.current === null) return;
 
     const currentY = e.touches[0].clientY;
-    const deltaY = lastTouchYRef.current - currentY;
+    const deltaY = currentY - lastTouchYRef.current;
     lastTouchYRef.current = currentY;
 
     setCameraY((prev) => Math.max(minY, Math.min(maxY, prev + deltaY * 0.02)));
@@ -273,23 +273,30 @@ export default function RecordScene({ records }: RecordSceneProps) {
       )}
 
       {/* End of collection message */}
-      {!selectedRecord && cameraY >= totalHeight - 2 && (
-        <div className="absolute bottom-12 left-1/2 -translate-x-1/2 text-center transition-all duration-300">
-          <p className="text-zinc-600 text-sm">
-            Thanks for digging!
-            <br/>
-            Follow me on X at{" "}
-            <a
-              href="https://x.com/oscargws_"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-zinc-900 hover:underline"
-            >
-              @oscargws_
-            </a>
-          </p>
-        </div>
-      )}
+      <div
+        className={`
+          absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
+          text-center transition-all duration-500 ease-out
+          ${!selectedRecord && cameraY >= totalHeight - 2
+            ? "opacity-100"
+            : "opacity-0 pointer-events-none"
+          }
+        `}
+      >
+        <p className="text-zinc-600 text-sm">
+          Thanks for digging!
+          <br/>
+          Follow me on X at{" "}
+          <a
+            href="https://x.com/oscargws_"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-zinc-900 hover:underline"
+          >
+            @oscargws_
+          </a>
+        </p>
+      </div>
 
       {/* Built by credit - desktop only */}
       {!isMobile && (
