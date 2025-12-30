@@ -1,6 +1,6 @@
 "use client";
 
-import { Canvas } from "@react-three/fiber";
+import { Canvas, useFrame } from "@react-three/fiber";
 import { useRef, useState, useCallback, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { useControls, Leva } from "leva";
@@ -13,6 +13,51 @@ interface RecordSceneProps {
   records: RecordType[];
 }
 
+// Inertia controller component that runs inside Canvas
+function InertiaController({
+  velocityRef,
+  isDeceleratingRef,
+  setCameraY,
+  minY,
+  maxY,
+}: {
+  velocityRef: React.MutableRefObject<number>;
+  isDeceleratingRef: React.MutableRefObject<boolean>;
+  setCameraY: React.Dispatch<React.SetStateAction<number>>;
+  minY: number;
+  maxY: number;
+}) {
+  useFrame(() => {
+    if (!isDeceleratingRef.current) return;
+
+    const velocity = velocityRef.current;
+    
+    // Stop if velocity is too low
+    if (Math.abs(velocity) < 0.0001) {
+      isDeceleratingRef.current = false;
+      velocityRef.current = 0;
+      return;
+    }
+
+    // Apply friction decay
+    velocityRef.current *= 0.95;
+
+    // Update camera position
+    setCameraY((prev) => {
+      const next = prev + velocityRef.current;
+      // Stop inertia if hitting bounds
+      if (next <= minY || next >= maxY) {
+        isDeceleratingRef.current = false;
+        velocityRef.current = 0;
+        return Math.max(minY, Math.min(maxY, next));
+      }
+      return next;
+    });
+  });
+
+  return null;
+}
+
 export default function RecordScene({ records }: RecordSceneProps) {
   const [cameraY, setCameraY] = useState(-6);
   const [selectedRecord, setSelectedRecord] = useState<RecordType | null>(null);
@@ -23,6 +68,9 @@ export default function RecordScene({ records }: RecordSceneProps) {
   const [isMobile, setIsMobile] = useState(false);
   const touchStartRef = useRef<number | null>(null);
   const lastTouchYRef = useRef<number>(0);
+  const lastTouchTimeRef = useRef<number>(0);
+  const velocityRef = useRef<number>(0);
+  const isDeceleratingRef = useRef<boolean>(false);
 
   // Detect mobile/small screens
   useEffect(() => {
@@ -128,18 +176,33 @@ export default function RecordScene({ records }: RecordSceneProps) {
   // Touch handlers for mobile drag scrolling
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     if (selectedRecord) return;
+    // Stop any ongoing inertia
+    isDeceleratingRef.current = false;
+    velocityRef.current = 0;
+    
     touchStartRef.current = e.touches[0].clientY;
     lastTouchYRef.current = e.touches[0].clientY;
+    lastTouchTimeRef.current = performance.now();
   }, [selectedRecord]);
 
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
     if (selectedRecord || touchStartRef.current === null) return;
 
     const currentY = e.touches[0].clientY;
+    const currentTime = performance.now();
     const deltaY = currentY - lastTouchYRef.current;
+    const deltaTime = currentTime - lastTouchTimeRef.current;
+    
     lastTouchYRef.current = currentY;
+    lastTouchTimeRef.current = currentTime;
 
-    setCameraY((prev) => Math.max(minY, Math.min(maxY, prev + deltaY * 0.02)));
+    // Calculate velocity (pixels per ms, converted to scroll units)
+    if (deltaTime > 0) {
+      velocityRef.current = (deltaY / deltaTime) * 0.3;
+    }
+
+    // Reduced sensitivity for more natural feel
+    setCameraY((prev) => Math.max(minY, Math.min(maxY, prev + deltaY * 0.012)));
 
     // Track scroll distance for hiding hint
     if (!hasScrolled) {
@@ -152,6 +215,10 @@ export default function RecordScene({ records }: RecordSceneProps) {
 
   const handleTouchEnd = useCallback(() => {
     touchStartRef.current = null;
+    // Start inertia if there's meaningful velocity
+    if (Math.abs(velocityRef.current) > 0.001) {
+      isDeceleratingRef.current = true;
+    }
   }, []);
 
   const handleRecordClick = useCallback(
@@ -249,6 +316,14 @@ export default function RecordScene({ records }: RecordSceneProps) {
           })}
         </group>
 
+        {/* Inertia controller for smooth mobile scrolling */}
+        <InertiaController
+          velocityRef={velocityRef}
+          isDeceleratingRef={isDeceleratingRef}
+          setCameraY={setCameraY}
+          minY={minY}
+          maxY={maxY}
+        />
       </Canvas>
 
       {/* Player */}
