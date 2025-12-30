@@ -1,13 +1,41 @@
 "use client";
 
-import { Canvas } from "@react-three/fiber";
+import { Canvas, useThree, useFrame } from "@react-three/fiber";
 import { useRef, useState, useCallback } from "react";
 import Link from "next/link";
 import { useControls } from "leva";
 import { PerspectiveCamera } from "@react-three/drei";
+import * as THREE from "three";
 import { Record as RecordType } from "../lib/discogs";
 import RecordMesh from "./Record";
 import RecordInfo from "./RecordInfo";
+
+// Backdrop that appears between stack and selected record
+function Backdrop({ visible }: { visible: boolean }) {
+  const { camera } = useThree();
+  const materialRef = useRef<THREE.MeshBasicMaterial>(null);
+  const [opacity, setOpacity] = useState(0);
+
+  useFrame((_, delta) => {
+    const targetOpacity = visible ? 0.5 : 0;
+    setOpacity((prev) => THREE.MathUtils.lerp(prev, targetOpacity, delta * 4));
+
+    if (materialRef.current) {
+      materialRef.current.opacity = opacity;
+    }
+  });
+
+  // Always render but control visibility via opacity
+  if (opacity < 0.01 && !visible) return null;
+
+  // Position backdrop in front of the stack (z~0) but behind the selected record (z~3)
+  return (
+    <mesh position={[camera.position.x, camera.position.y, 1.5]}>
+      <planeGeometry args={[100, 100]} />
+      <meshBasicMaterial ref={materialRef} color="#000000" opacity={opacity} transparent side={THREE.DoubleSide} />
+    </mesh>
+  );
+}
 
 interface RecordSceneProps {
   records: RecordType[];
@@ -38,11 +66,14 @@ export default function RecordScene({ records }: RecordSceneProps) {
 
   const handleWheel = useCallback(
     (e: React.WheelEvent) => {
+      // Disable scroll when a record is selected
+      if (selectedRecord) return;
+
       e.preventDefault();
       const delta = e.deltaY * 0.01;
       setCameraY((prev) => Math.max(minY, Math.min(maxY, prev + delta)));
     },
-    [minY, maxY]
+    [minY, maxY, selectedRecord]
   );
 
   const handleRecordClick = useCallback(
@@ -97,10 +128,15 @@ export default function RecordScene({ records }: RecordSceneProps) {
               }
               spacing={recordSpacing}
               leanAngle={leanAngle}
+              scrollOffset={cameraY}
             />
           ))}
         </group>
+
+        {/* Dark backdrop between stack and selected record */}
+        <Backdrop visible={!!selectedRecord} />
       </Canvas>
+
 
       {/* Info overlay */}
       <RecordInfo record={hoveredRecord || selectedRecord} />

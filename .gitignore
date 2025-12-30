@@ -39,3 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# discogs cache (regenerate by deleting and restarting dev server)
+discogs-cache.json

@@ -36,6 +36,7 @@ interface DiscogsResponse {
 const DISCOGS_USERNAME = "oggadog";
 const DISCOGS_API_BASE = "https://api.discogs.com";
 const COVERS_DIR = path.join(process.cwd(), "public", "records", "covers");
+const CACHE_FILE = path.join(process.cwd(), "src", "app", "records", "lib", "discogs-cache.json");
 
 async function downloadImage(url: string, filename: string): Promise<boolean> {
   try {
@@ -67,6 +68,13 @@ async function downloadImage(url: string, filename: string): Promise<boolean> {
 }
 
 export async function fetchDiscogsCollection(): Promise<Record[]> {
+  // Check for cached data first (useful for dev to avoid rate limiting)
+  if (fs.existsSync(CACHE_FILE)) {
+    console.log("Using cached Discogs data");
+    const cached = JSON.parse(fs.readFileSync(CACHE_FILE, "utf-8")) as Record[];
+    return cached;
+  }
+
   const token = process.env.DISCOGS_TOKEN;
 
   if (!token) {
@@ -94,7 +102,12 @@ export async function fetchDiscogsCollection(): Promise<Record[]> {
     });
 
     if (!response.ok) {
-      throw new Error(`Discogs API error: ${response.status}`);
+      console.error(`Discogs API error: ${response.status} - possibly rate limited`);
+      // Return what we have so far, or mock data if nothing
+      if (allRecords.length > 0) {
+        return allRecords;
+      }
+      return getMockRecords();
     }
 
     const data: DiscogsResponse = await response.json();
@@ -127,7 +140,10 @@ export async function fetchDiscogsCollection(): Promise<Record[]> {
     }
   }
 
-  console.log(`Downloaded ${allRecords.length} records`);
+  // Cache the results for development
+  fs.writeFileSync(CACHE_FILE, JSON.stringify(allRecords, null, 2));
+  console.log(`Downloaded and cached ${allRecords.length} records`);
+
   return allRecords;
 }
 
