@@ -71,24 +71,40 @@ export function GenreDivider({
   const genreColor = getGenreColor(genre);
   const stickerRadius = 0.035;
 
+  // Animation state - same as records for consistent scrolling
+  // Start from behind (z: -2) so dividers animate in from back like records
+  const [currentY, setCurrentY] = useState(baseY);
+  const [currentZ, setCurrentZ] = useState(-2);
+  const [currentScale, setCurrentScale] = useState(1);
+
   // Wave/dip effect - same as records
-  let waveEffect = 0;
-  let scaleEffect = 1;
+  let targetWaveEffect = 0;
+  let targetScaleEffect = 1;
   const waveCenterOffset = 0.5;
   const distanceFromCenter = Math.abs(baseY - (scrollOffset + waveCenterOffset));
   const waveWidth = 0.8;
 
   if (isMobile) {
     const waveHeight = 0.4;
-    waveEffect = Math.max(0, waveHeight * Math.exp(-(distanceFromCenter * distanceFromCenter) / (2 * waveWidth * waveWidth)));
+    targetWaveEffect = Math.max(0, waveHeight * Math.exp(-(distanceFromCenter * distanceFromCenter) / (2 * waveWidth * waveWidth)));
   } else {
     const dipDepth = 0.8;
     const scaleBoost = 0.15;
     const desktopWaveWidth = 1.5;
     const proximity = Math.exp(-(distanceFromCenter * distanceFromCenter) / (2 * desktopWaveWidth * desktopWaveWidth));
-    waveEffect = -dipDepth * proximity;
-    scaleEffect = 1 + scaleBoost * proximity;
+    targetWaveEffect = -dipDepth * proximity;
+    targetScaleEffect = 1 + scaleBoost * proximity;
   }
+
+  const targetY = baseY + targetWaveEffect;
+
+  // Smooth animation - same speed as records
+  useFrame((_, delta) => {
+    const speed = 8;
+    setCurrentY((prev) => THREE.MathUtils.lerp(prev, targetY, delta * speed));
+    setCurrentZ((prev) => THREE.MathUtils.lerp(prev, 0, delta * speed));
+    setCurrentScale((prev) => THREE.MathUtils.lerp(prev, targetScaleEffect, delta * speed));
+  });
 
   // Create tab geometry with only top corners rounded
   const tabGeometry = useMemo(() => {
@@ -105,9 +121,9 @@ export function GenreDivider({
 
   return (
     <group
-      position={[0, baseY + waveEffect, 0]}
+      position={[0, currentY, currentZ]}
       rotation={[leanAngle, 0, 0]}
-      scale={scaleEffect}
+      scale={currentScale}
     >
       {/* Main card - same size as record sleeve */}
       <mesh>

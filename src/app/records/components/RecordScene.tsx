@@ -152,7 +152,7 @@ export default function RecordScene({ records }: RecordSceneProps) {
 
   const { minY, maxY } = useControls("Scroll", {
     minY: { value: -6, min: -20, max: 0, step: 0.5 },
-    maxY: { value: totalHeight, min: 0, max: totalHeight + 20, step: 0.5 },
+    maxY: { value: 27.5, min: 0, max: totalHeight + 20, step: 0.5 },
   });
 
   const handleWheel = useCallback(
@@ -360,7 +360,7 @@ export default function RecordScene({ records }: RecordSceneProps) {
         className={`
           absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
           text-center transition-all duration-500 ease-out
-          ${!selectedRecord && cameraY >= totalHeight - 2
+          ${!selectedRecord && cameraY >= maxY - 2
             ? "opacity-100"
             : "opacity-0 pointer-events-none"
           }
